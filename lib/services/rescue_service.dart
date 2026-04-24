@@ -1,0 +1,45 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/rescue_report_model.dart';
+
+class RescueService {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> createRescueReport({
+    required String userId,
+    required String location,
+    required List<String> conditions,
+    required String description,
+    required String phone,
+    required String notes,
+  }) async {
+    final doc = _firestore.collection('rescue_reports').doc();
+
+    final report = RescueReportModel(
+      id: doc.id,
+      location: location,
+      conditions: conditions,
+      description: description,
+      phone: phone,
+      notes: notes,
+      status: 'Menunggu',
+      createdAt: DateTime.now(),
+    );
+
+    await doc.set({...report.toMap(), 'userId': userId});
+  }
+
+  Stream<List<RescueReportModel>> getUserReports(String userId) {
+    return _firestore
+        .collection('rescue_reports')
+        .where('userId', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+          final reports = snapshot.docs
+              .map((doc) => RescueReportModel.fromMap(doc.id, doc.data()))
+              .toList();
+
+          reports.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return reports;
+        });
+  }
+}
