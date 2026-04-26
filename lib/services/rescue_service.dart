@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/rescue_report_model.dart';
+import 'notification_service.dart';
 
 class RescueService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> createRescueReport({
+  Future<String> createRescueReport({
     required String userId,
     required String location,
     required List<String> conditions,
@@ -25,7 +27,22 @@ class RescueService {
       createdAt: DateTime.now(),
     );
 
-    await doc.set({...report.toMap(), 'userId': userId});
+    await doc.set({
+      ...report.toMap(),
+      'userId': userId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    await NotificationService().createNotification(
+      userId: userId,
+      title: 'Laporan rescue berhasil disubmit',
+      message:
+          'Laporan rescue kamu untuk lokasi $location berhasil dikirim dan sedang menunggu ditinjau admin.',
+      type: 'rescue_submit',
+      rescueReportId: doc.id,
+    );
+
+    return doc.id;
   }
 
   Stream<List<RescueReportModel>> getUserReports(String userId) {
