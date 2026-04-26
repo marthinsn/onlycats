@@ -44,6 +44,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Future<void> _logout() async {
+    final bool? confirmLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Keluar Akun'),
+          content: const Text('Apakah kamu yakin ingin logout dari akun ini?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.orange,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmLogout != true) return;
+
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal logout: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,7 +180,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.info_outline,
                         title: 'Tentang Aplikasi',
                         subtitle: 'v1.0.0',
+                      ),
+                      ProfileMenuTile(
+                        icon: Icons.logout_rounded,
+                        title: 'Keluar',
+                        subtitle: 'Logout dari akun ini',
                         isLast: true,
+                        onTap: _logout,
                       ),
                     ],
                   ),
@@ -406,6 +458,8 @@ class ProfileMenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLogout = title == 'Keluar';
+
     return Container(
       decoration: BoxDecoration(
         border: isLast
@@ -420,17 +474,21 @@ class ProfileMenuTile extends StatelessWidget {
           width: 54,
           height: 54,
           decoration: BoxDecoration(
-            color: const Color(0xFFF8EAEA),
+            color: isLogout ? const Color(0xFFFFE5E0) : const Color(0xFFF8EAEA),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(icon, color: AppColors.orange, size: 28),
+          child: Icon(
+            icon,
+            color: isLogout ? Colors.redAccent : AppColors.orange,
+            size: 28,
+          ),
         ),
         title: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
-            color: AppColors.primaryText,
+            color: isLogout ? Colors.redAccent : AppColors.primaryText,
           ),
         ),
         subtitle: subtitle != null

@@ -1,15 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// Daftar email yang dianggap admin 
-const List<String> adminEmails = [
-  'admin@onlycats.id',
-  'test@mail.com', // email dummy login sesuai main.dart
-];
+// Email dengan domain ini otomatis dianggap sebagai admin.
+// Contoh: admin@admin.com, dhona@admin.com, username@admin.com
+const String adminEmailDomain = '@admin.com';
 
-bool isAdminEmail(String? email) =>
-    email != null && adminEmails.contains(email.toLowerCase());
+// Daftar email admin tambahan.
+// Pakai ini kalau ada email admin yang tidak memakai domain @admin.com.
+const List<String> adminEmails = ['admin@onlycats.id'];
 
-//  Model ringkasan statistik 
+bool isAdminEmail(String? email) {
+  if (email == null) return false;
+
+  final normalizedEmail = email.trim().toLowerCase();
+
+  return normalizedEmail.endsWith(adminEmailDomain) ||
+      adminEmails.contains(normalizedEmail);
+}
+
+// Model ringkasan statistik
 class AdminStats {
   final int totalCats;
   final int totalRescueReports;
@@ -62,16 +70,28 @@ class AdminService {
     final adoptionSnap = results[2];
 
     final rescueDocs = rescueSnap.docs;
-    final pending = rescueDocs.where((d) => d['status'] == 'Menunggu').length;
-    final inProgress = rescueDocs
-        .where((d) => d['status'] == 'Diproses')
-        .length;
-    final done = rescueDocs.where((d) => d['status'] == 'Selesai').length;
+
+    final pending = rescueDocs.where((d) {
+      final data = d.data();
+      return data['status'] == 'Menunggu';
+    }).length;
+
+    final inProgress = rescueDocs.where((d) {
+      final data = d.data();
+      return data['status'] == 'Diproses';
+    }).length;
+
+    final done = rescueDocs.where((d) {
+      final data = d.data();
+      return data['status'] == 'Selesai';
+    }).length;
 
     final adoptionDocs = adoptionSnap.docs;
-    final pendingAdoption = adoptionDocs
-        .where((d) => d['status'] == 'Menunggu')
-        .length;
+
+    final pendingAdoption = adoptionDocs.where((d) {
+      final data = d.data();
+      return data['status'] == 'Menunggu';
+    }).length;
 
     return AdminStats(
       totalCats: catsSnap.size,
@@ -94,14 +114,27 @@ class AdminService {
 
     return snap.docs.map((doc) {
       final data = doc.data();
+
       return RecentRescue(
         id: doc.id,
         location: data['location'] ?? '-',
         status: data['status'] ?? 'Menunggu',
-        createdAt: data['createdAt'] != null
-            ? DateTime.tryParse(data['createdAt']) ?? DateTime.now()
-            : DateTime.now(),
+        createdAt: _parseCreatedAt(data['createdAt']),
       );
     }).toList();
+  }
+
+  DateTime _parseCreatedAt(dynamic value) {
+    if (value == null) return DateTime.now();
+
+    if (value is Timestamp) {
+      return value.toDate();
+    }
+
+    if (value is String) {
+      return DateTime.tryParse(value) ?? DateTime.now();
+    }
+
+    return DateTime.now();
   }
 }

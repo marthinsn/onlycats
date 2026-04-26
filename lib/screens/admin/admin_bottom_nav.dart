@@ -47,7 +47,7 @@ class AdminBottomNav extends StatelessWidget {
   void _onTap(BuildContext context, int index) {
     if (index == currentIndex) return;
 
-    // Import lazy untuk menghindari circular import 
+    // Import lazy untuk menghindari circular import
     if (index == 0) {
       Navigator.pushReplacementNamed(context, '/admin/home');
     } else if (index == 1) {
