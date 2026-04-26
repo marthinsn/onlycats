@@ -1,93 +1,220 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../theme/app_colors.dart';
+import '../services/notification_service.dart';
+import 'home_screen.dart';
+import 'rescue_screen.dart';
+import 'profile_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   const NotificationScreen({super.key});
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> _notificationStream(
+    String userId,
+  ) {
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
+  }
+
+  Future<void> _markAllAsRead(BuildContext context, String userId) async {
+    try {
+      await NotificationService().markAllAsRead(userId);
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Semua notifikasi sudah ditandai dibaca.'),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal menandai notifikasi: $e')));
+    }
+  }
+
+  String _formatTime(dynamic createdAt) {
+    if (createdAt == null) return '-';
+
+    DateTime dateTime;
+
+    if (createdAt is Timestamp) {
+      dateTime = createdAt.toDate();
+    } else if (createdAt is String) {
+      dateTime = DateTime.tryParse(createdAt) ?? DateTime.now();
+    } else {
+      dateTime = DateTime.now();
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} menit lalu';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} jam lalu';
+    } else if (difference.inDays == 1) {
+      return 'Kemarin';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
+  }
+
+  IconData _getIcon(String type) {
+    switch (type) {
+      case 'rescue_submit':
+        return Icons.warning_amber_rounded;
+      case 'rescue_status':
+        return Icons.access_time;
+      case 'rescue_done':
+        return Icons.check_circle_outline;
+      case 'adoption':
+        return Icons.favorite_border;
+      default:
+        return Icons.notifications_none_rounded;
+    }
+  }
+
+  String _getChipLabel(String type) {
+    switch (type) {
+      case 'rescue_submit':
+        return 'Rescue';
+      case 'rescue_status':
+        return 'Update';
+      case 'rescue_done':
+        return 'Selesai';
+      case 'adoption':
+        return 'Adopsi';
+      default:
+        return 'Info';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: TextButton(
+              onPressed: () {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
+              },
+              child: const Text('Silakan login terlebih dahulu.'),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      bottomNavigationBar: _buildBottomNavigation(),
+      bottomNavigationBar: _buildBottomNavigation(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildTopBar(context),
-              const SizedBox(height: 14),
-              const Text(
-                'Lihat update rescue, adopsi, dan aktivitas akunmu.',
-                style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
-              ),
-              const SizedBox(height: 28),
-              _buildSummaryCard(),
-              const SizedBox(height: 26),
-              const Text(
-                'HARI INI',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: Color(0xFFB5AAA5),
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _notificationStream(user.uid),
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Gagal memuat notifikasi: ${snapshot.error}',
+                  textAlign: TextAlign.center,
                 ),
+              );
+            }
+
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.orange),
+              );
+            }
+
+            final docs = snapshot.data?.docs ?? [];
+
+            final unreadCount = docs.where((doc) {
+              final data = doc.data();
+              return data['isRead'] == false;
+            }).length;
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTopBar(context, user.uid, unreadCount),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Lihat update rescue, adopsi, dan aktivitas akunmu.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.secondaryText,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  _buildSummaryCard(unreadCount),
+                  const SizedBox(height: 26),
+                  const Text(
+                    'NOTIFIKASI',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Color(0xFFB5AAA5),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+
+                  if (docs.isEmpty)
+                    _buildEmptyNotification()
+                  else
+                    ...docs.map((doc) {
+                      final data = doc.data();
+
+                      final title = data['title'] ?? 'Notifikasi';
+                      final message = data['message'] ?? '-';
+                      final type = data['type'] ?? 'info';
+                      final isRead = data['isRead'] == true;
+                      final createdAt = data['createdAt'];
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: NotificationItemCard(
+                          icon: _getIcon(type),
+                          title: title,
+                          message: message,
+                          timeText: _formatTime(createdAt),
+                          chipLabel: _getChipLabel(type),
+                          showDot: !isRead,
+                        ),
+                      );
+                    }),
+                ],
               ),
-              const SizedBox(height: 14),
-              const NotificationItemCard(
-                icon: Icons.favorite_border,
-                title: 'Permintaan adopsi baru masuk',
-                message:
-                    'Ada pengguna yang tertarik mengadopsi Oranye. Cek detail permintaan dan lanjutkan proses verifikasi.',
-                timeText: '08:45',
-                chipLabel: 'Adopsi',
-              ),
-              const SizedBox(height: 16),
-              const NotificationItemCard(
-                icon: Icons.access_time,
-                title: 'Update status rescue',
-                message:
-                    'Laporan rescue untuk kucing di Jakarta Selatan sedang ditinjau oleh relawan terdekat.',
-                timeText: '07:30',
-                chipLabel: 'Rescue',
-              ),
-              const SizedBox(height: 16),
-              const NotificationItemCard(
-                icon: Icons.access_time,
-                title: 'Pengingat follow up adopsi',
-                message:
-                    'Jangan lupa cek kembali kandidat adopter yang belum melengkapi informasi rumah dan kontak.',
-                timeText: '06:55',
-                chipLabel: 'Pengingat',
-              ),
-              const SizedBox(height: 26),
-              const Text(
-                'KEMARIN',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.2,
-                  color: Color(0xFFB5AAA5),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const NotificationItemCard(
-                icon: Icons.check_circle_outline,
-                title: 'Rescue berhasil diselesaikan',
-                message:
-                    'Kucing terlantar yang kamu laporkan telah berhasil diamankan dan sedang dalam perawatan sementara.',
-                timeText: 'Kemarin',
-                chipLabel: 'Selesai',
-                showDot: false,
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
+  Widget _buildTopBar(BuildContext context, String userId, int unreadCount) {
     return Row(
       children: [
         InkWell(
@@ -119,7 +246,11 @@ class NotificationScreen extends StatelessWidget {
           ),
         ),
         OutlinedButton(
-          onPressed: () {},
+          onPressed: unreadCount == 0
+              ? null
+              : () {
+                  _markAllAsRead(context, userId);
+                },
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.orange,
             side: const BorderSide(color: Color(0xFFFFD0BE)),
@@ -137,7 +268,7 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(int unreadCount) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -146,10 +277,10 @@ class NotificationScreen extends StatelessWidget {
         border: Border.all(color: const Color(0xFFFFD0BE)),
         borderRadius: BorderRadius.circular(28),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 34,
             backgroundColor: AppColors.orange,
             child: Icon(
@@ -158,22 +289,22 @@ class NotificationScreen extends StatelessWidget {
               size: 30,
             ),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '3 notifikasi baru',
-                  style: TextStyle(
+                  '$unreadCount notifikasi baru',
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryText,
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
-                  'Ada update penting tentang rescue dan adopsi kucing.',
+                const SizedBox(height: 6),
+                const Text(
+                  'Ada update penting tentang rescue dan aktivitas akunmu.',
                   style: TextStyle(
                     fontSize: 15,
                     height: 1.5,
@@ -188,7 +319,43 @@ class NotificationScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavigation() {
+  Widget _buildEmptyNotification() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFAF8),
+        border: Border.all(color: const Color(0xFFFFD0BE)),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.notifications_off_outlined,
+            color: AppColors.orange,
+            size: 42,
+          ),
+          SizedBox(height: 12),
+          Text(
+            'Belum ada notifikasi',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: AppColors.primaryText,
+            ),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Update rescue kamu akan muncul di sini.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: AppColors.secondaryText),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation(BuildContext context) {
     return Container(
       height: 84,
       decoration: const BoxDecoration(
@@ -197,7 +364,24 @@ class NotificationScreen extends StatelessWidget {
       ),
       child: BottomNavigationBar(
         currentIndex: 0,
-        onTap: (_) {},
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const RescueScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          }
+        },
         backgroundColor: Colors.white,
         elevation: 0,
         selectedItemColor: AppColors.orange,

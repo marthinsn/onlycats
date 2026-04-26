@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import '../services/admin_service.dart';
+import '../services/notification_listener_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -45,9 +46,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      final loggedInEmail = credential.user?.email?.toLowerCase() ?? email;
+      final user = credential.user;
 
-      if (isAdminEmail(loggedInEmail)) {
+      if (user == null) {
+        _showMessage('Login gagal. User tidak ditemukan.');
+        return;
+      }
+
+      final loggedInEmail = user.email?.toLowerCase() ?? email;
+      final isAdmin = isAdminEmail(loggedInEmail);
+
+      // Listener notifikasi dijalankan setelah login berhasil.
+      // Untuk admin tidak wajib, tapi aman kalau dijalankan juga.
+      // Kalau hanya user biasa yang mau menerima notifikasi, pakai kondisi !isAdmin.
+      NotificationListenerService.startListening(user.uid);
+
+      if (isAdmin) {
         Navigator.pushReplacementNamed(context, '/admin/home');
       } else {
         Navigator.pushReplacementNamed(context, '/home');

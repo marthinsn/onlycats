@@ -13,11 +13,13 @@ import 'screens/admin/admin_home_screen.dart';
 import 'screens/admin/admin_rescue_screen.dart';
 import 'screens/admin/admin_profile_screen.dart';
 
+import 'services/local_notification_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
+  await LocalNotificationService.init();
   runApp(const OnlyCatsApp());
 }
 

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../../theme/app_colors.dart';
-import '../../models/rescue_report_model.dart';
+import '../../services/notification_service.dart';
 import 'admin_bottom_nav.dart';
 
 class AdminRescueScreen extends StatefulWidget {
@@ -27,14 +28,49 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
     return query.snapshots();
   }
 
-  Future<void> _updateStatus(String docId, String newStatus) async {
+  Future<void> _updateStatus({
+    required String docId,
+    required String newStatus,
+    required Map<String, dynamic> reportData,
+  }) async {
+    final oldStatus = reportData['status'] ?? 'Menunggu';
+
+    if (oldStatus == newStatus) {
+      return;
+    }
+
+    final reportOwnerUserId = reportData['userId'];
+
     await FirebaseFirestore.instance
         .collection('rescue_reports')
         .doc(docId)
-        .update({'status': newStatus});
+        .update({
+          'status': newStatus,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+    if (reportOwnerUserId != null && reportOwnerUserId.toString().isNotEmpty) {
+      await NotificationService().createNotification(
+        userId: reportOwnerUserId.toString(),
+        title: 'Status laporan rescue diperbarui',
+        message: 'Laporan rescue kamu sekarang berstatus $newStatus.',
+        type: newStatus == 'Selesai' ? 'rescue_done' : 'rescue_status',
+        rescueReportId: docId,
+      );
+    }
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Status laporan berhasil diubah ke $newStatus.')),
+    );
   }
 
-  void _showStatusDialog(String docId, String currentStatus) {
+  void _showStatusDialog(
+    String docId,
+    String currentStatus,
+    Map<String, dynamic> reportData,
+  ) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -69,10 +105,24 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
               const SizedBox(height: 16),
               ...['Menunggu', 'Diproses', 'Selesai'].map((status) {
                 final isSelected = status == currentStatus;
+
                 return GestureDetector(
                   onTap: () async {
                     Navigator.pop(context);
-                    await _updateStatus(docId, status);
+
+                    try {
+                      await _updateStatus(
+                        docId: docId,
+                        newStatus: status,
+                        reportData: reportData,
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal mengubah status: $e')),
+                      );
+                    }
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 10),
@@ -209,19 +259,24 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
                       child: CircularProgressIndicator(color: AppColors.orange),
                     );
                   }
+
                   if (snap.hasError) {
                     return Center(child: Text('Error: ${snap.error}'));
                   }
+
                   final docs = snap.data?.docs ?? [];
+
                   if (docs.isEmpty) {
                     return _buildEmpty();
                   }
+
                   return ListView.builder(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                     itemCount: docs.length,
                     itemBuilder: (context, i) {
                       final doc = docs[i];
                       final data = doc.data() as Map<String, dynamic>;
+
                       return _buildReportCard(doc.id, data);
                     },
                   );
@@ -240,6 +295,7 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
       child: Row(
         children: _statuses.map((s) {
           final selected = _filterStatus == s;
+
           return GestureDetector(
             onTap: () => setState(() => _filterStatus = s),
             child: Container(
@@ -305,7 +361,7 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
                 ),
               ),
               GestureDetector(
-                onTap: () => _showStatusDialog(docId, status),
+                onTap: () => _showStatusDialog(docId, status, data),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
