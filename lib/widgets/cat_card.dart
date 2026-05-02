@@ -37,9 +37,9 @@ class CatCard extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(28),
                     ),
-                    image: cat.image.isNotEmpty
+                    image: _catImageProvider() != null
                         ? DecorationImage(
-                            image: AssetImage(cat.image),
+                            image: _catImageProvider()!,
                             fit: BoxFit.cover,
                           )
                         : null,
@@ -165,6 +165,18 @@ class CatCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  ImageProvider? _catImageProvider() {
+    final image = cat.image.trim();
+
+    if (image.isEmpty) return null;
+
+    if (image.startsWith('http')) {
+      return NetworkImage(image);
+    }
+
+    return AssetImage(image);
   }
 
   Widget _tag(String text) {

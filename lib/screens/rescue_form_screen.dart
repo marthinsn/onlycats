@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/rescue_service.dart';
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+import '../services/cloudinary_service.dart';
 
 class RescueFormScreen extends StatefulWidget {
   const RescueFormScreen({super.key});
@@ -17,7 +21,10 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
   final TextEditingController notesController = TextEditingController();
 
   final RescueService rescueService = RescueService();
+  final CloudinaryService cloudinaryService = CloudinaryService();
+
   bool isSubmitting = false;
+  File? selectedImage;
 
   final List<String> conditionOptions = [
     'Terlantar',
@@ -38,6 +45,19 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
   }
 
   @override
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
+
+    if (pickedFile == null) return;
+
+    setState(() {
+      selectedImage = File(pickedFile.path);
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F1EE),
@@ -122,7 +142,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
     return _sectionCard(
       title: 'Foto Kucing',
       child: GestureDetector(
-        onTap: () {},
+        onTap: isSubmitting ? null : _pickImage,
         child: Container(
           width: double.infinity,
           height: 140,
@@ -131,12 +151,22 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFFFD2C2), width: 2),
           ),
-          child: const Center(
-            child: Text(
-              'Upload foto kucing',
-              style: TextStyle(fontSize: 16, color: AppColors.orange),
-            ),
-          ),
+          child: selectedImage == null
+              ? const Center(
+                  child: Text(
+                    'Upload foto kucing',
+                    style: TextStyle(fontSize: 16, color: AppColors.orange),
+                  ),
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Image.file(
+                    selectedImage!,
+                    width: double.infinity,
+                    height: 140,
+                    fit: BoxFit.cover,
+                  ),
+                ),
         ),
       ),
     );
@@ -323,14 +353,15 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
       return;
     }
 
-    if (locationController.text.trim().isEmpty ||
+    if (selectedImage == null ||
+        locationController.text.trim().isEmpty ||
         descriptionController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
         selectedConditions.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Mohon lengkapi lokasi, kondisi, deskripsi, dan nomor HP',
+            'Mohon lengkapi foto, lokasi, kondisi, deskripsi, dan nomor HP',
           ),
         ),
       );
@@ -342,6 +373,11 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
     });
 
     try {
+      final rescuePhotoUrl = await cloudinaryService.uploadImage(
+        selectedImage!,
+        folder: 'onlycats/rescue_reports',
+      );
+
       await rescueService.createRescueReport(
         userId: user.uid,
         location: locationController.text.trim(),
@@ -349,6 +385,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
         description: descriptionController.text.trim(),
         phone: phoneController.text.trim(),
         notes: notesController.text.trim(),
+        rescuePhotoUrl: rescuePhotoUrl,
       );
 
       if (!context.mounted) return;

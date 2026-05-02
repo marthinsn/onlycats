@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/cat_model.dart';
 import '../theme/app_colors.dart';
+import 'adoption_form_screen.dart';
 
 class CatDetailScreen extends StatelessWidget {
   final CatModel cat;
@@ -8,6 +9,40 @@ class CatDetailScreen extends StatelessWidget {
   const CatDetailScreen({super.key, required this.cat});
 
   @override
+  Widget _buildCatImage() {
+    final image = cat.image.trim();
+
+    if (image.isEmpty) {
+      return Container(
+        color: const Color(0xFFEFE8E4),
+        child: const Center(
+          child: Icon(Icons.image_outlined, size: 80, color: Color(0xFFC9C9C9)),
+        ),
+      );
+    }
+
+    if (image.startsWith('http')) {
+      return Image.network(
+        image,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: const Color(0xFFEFE8E4),
+            child: const Center(
+              child: Icon(
+                Icons.broken_image_outlined,
+                size: 80,
+                color: Color(0xFFC9C9C9),
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    return Image.asset(image, fit: BoxFit.cover);
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -21,18 +56,7 @@ class CatDetailScreen extends StatelessWidget {
                     SizedBox(
                       height: 430,
                       width: double.infinity,
-                      child: cat.image.trim().isNotEmpty
-                          ? Image.asset(cat.image, fit: BoxFit.cover)
-                          : Container(
-                              color: const Color(0xFFEFE8E4),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  size: 80,
-                                  color: Color(0xFFC9C9C9),
-                                ),
-                              ),
-                            ),
+                      child: _buildCatImage(),
                     ),
                     Positioned(
                       left: 20,
@@ -167,7 +191,14 @@ class CatDetailScreen extends StatelessWidget {
                   child: SizedBox(
                     height: 60,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdoptionFormScreen(),
+                          ),
+                        );
+                      },
                       icon: const Icon(Icons.favorite, color: Colors.white),
                       label: const Text(
                         'Ajukan Adopsi',

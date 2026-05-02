@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import '../data/dummy_data.dart';
 import '../theme/app_colors.dart';
 import '../widgets/cat_card.dart';
-import '../widgets/category_card.dart';
 import '../widgets/filter_chip_item.dart';
 import 'rescue_screen.dart';
 import 'profile_screen.dart';
 import 'notification_screen.dart';
 import 'cat_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/cat_model.dart';
+import '../widgets/category_card.dart';
 import 'adoption_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -80,33 +81,10 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildSearchBar(),
             const SizedBox(height: 22),
             _buildMenuCards(),
-            const SizedBox(height: 18),
-            _buildAlertBox(),
             const SizedBox(height: 22),
             _buildFilterSection(),
             const SizedBox(height: 22),
-            const Text(
-              '5 Kucing Ditemukan',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryText,
-              ),
-            ),
-            const SizedBox(height: 18),
-            ...cats.map(
-              (cat) => CatCard(
-                cat: cat,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CatDetailScreen(cat: cat),
-                    ),
-                  );
-                },
-              ),
-            ),
+            _buildCatListFromFirestore(),
           ],
         ),
       ),
@@ -259,6 +237,12 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Laporkan',
             subtitle: 'Kucing Terlantar',
             iconBg: AppColors.orange,
+            onTap: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RescueScreen()),
+              );
+            },
           ),
         ),
         const SizedBox(width: 16),
@@ -280,41 +264,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAlertBox() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-      decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFFFFC8C1)),
-        borderRadius: BorderRadius.circular(18),
-        color: const Color(0xFFFFFBFA),
-      ),
-      child: Row(
-        children: const [
-          Icon(Icons.warning_amber_rounded, color: AppColors.danger),
-          SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              '1 kucing butuh bantuan segera!',
-              style: TextStyle(
-                color: AppColors.danger,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Text(
-            'Lihat',
-            style: TextStyle(
-              color: AppColors.danger,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFilterSection() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -327,6 +276,84 @@ class _HomeScreenState extends State<HomeScreen> {
           FilterChipItem(label: 'Rescue', icon: Icons.sos),
         ],
       ),
+    );
+  }
+
+  Widget _buildCatListFromFirestore() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('cats')
+          .where('status', isEqualTo: 'tersedia')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 24),
+            child: Center(
+              child: CircularProgressIndicator(color: AppColors.orange),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 18),
+            child: Text(
+              'Gagal memuat data kucing: ${snapshot.error}',
+              style: const TextStyle(color: AppColors.secondaryText),
+            ),
+          );
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+
+        if (docs.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.only(top: 18),
+            child: Text(
+              'Belum ada kucing yang tersedia untuk adopsi',
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.secondaryText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          );
+        }
+
+        final cats = docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return CatModel.fromMap(doc.id, data);
+        }).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${cats.length} Kucing Ditemukan',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.primaryText,
+              ),
+            ),
+            const SizedBox(height: 18),
+            ...cats.map(
+              (cat) => CatCard(
+                cat: cat,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CatDetailScreen(cat: cat),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

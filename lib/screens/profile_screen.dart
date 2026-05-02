@@ -6,6 +6,7 @@ import 'edit_profile_screen.dart';
 import '../data/profile_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
+import 'change_password_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -133,11 +134,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.assignment_outlined,
                         title: 'Laporan Saya',
                         subtitle: '0 laporan',
-                      ),
-                      ProfileMenuTile(
-                        icon: Icons.notifications_none_rounded,
-                        title: 'Notifikasi',
-                        subtitle: 'Aktif',
                         isLast: true,
                       ),
                     ],
@@ -168,9 +164,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           await _loadUserFromFirestore();
                         },
                       ),
-                      const ProfileMenuTile(
+                      ProfileMenuTile(
                         icon: Icons.lock_outline,
                         title: 'Keamanan Akun',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ChangePasswordScreen(),
+                            ),
+                          );
+                        },
                       ),
                       const ProfileMenuTile(
                         icon: Icons.help_outline,
@@ -259,19 +263,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8EAEA),
-              borderRadius: BorderRadius.circular(27),
-            ),
-            child: const Icon(
-              Icons.edit_outlined,
-              color: AppColors.orange,
-              size: 26,
             ),
           ),
         ],

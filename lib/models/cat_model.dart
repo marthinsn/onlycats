@@ -1,4 +1,5 @@
 class CatModel {
+  final String id;
   final String name;
   final String breed;
   final String age;
@@ -19,6 +20,7 @@ class CatModel {
   final List<String> personalities;
 
   const CatModel({
+    this.id = '',
     required this.name,
     required this.breed,
     required this.age,
@@ -38,4 +40,28 @@ class CatModel {
     required this.shelterSince,
     required this.personalities,
   });
+
+  factory CatModel.fromMap(String id, Map<String, dynamic> data) {
+    return CatModel(
+      id: id,
+      name: data['name'] ?? '',
+      breed: data['breed'] ?? '',
+      age: data['age'] ?? '',
+      location: data['location'] ?? '',
+      image: data['image'] ?? data['adoptionPhotoUrl'] ?? '',
+      gender: data['gender'] ?? 'male',
+      vaccinated: data['vaccinated'] ?? false,
+      sterilized: data['sterilized'] ?? false,
+      available: data['available'] ?? true,
+      favorite: data['favorite'] ?? false,
+      color: data['color'] ?? '',
+      weight: data['weight'] ?? '',
+      size: data['size'] ?? '',
+      description: data['description'] ?? '',
+      shelterName: data['shelterName'] ?? 'OnlyCats Rescue',
+      shelterLocation: data['shelterLocation'] ?? data['location'] ?? '',
+      shelterSince: data['shelterSince'] ?? '',
+      personalities: List<String>.from(data['personalities'] ?? []),
+    );
+  }
 }
