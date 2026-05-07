@@ -20,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int currentBottomNav = 0;
+  String searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
@@ -217,12 +218,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      child: const TextField(
+      child: TextField(
+        onChanged: (value) {
+          setState(() {
+            searchQuery = value.toLowerCase().trim();
+          });
+        },
         decoration: InputDecoration(
-          icon: Icon(Icons.search, color: Color(0xFFAAAAAA)),
+          icon: const Icon(Icons.search, color: Color(0xFFAAAAAA)),
           hintText: 'Cari nama, ras, lokasi...',
-          hintStyle: TextStyle(color: Color(0xFFAAAAAA)),
+          hintStyle: const TextStyle(color: Color(0xFFAAAAAA)),
           border: InputBorder.none,
+          suffixIcon: searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, color: Color(0xFFAAAAAA)),
+                  onPressed: () {
+                    setState(() {
+                      searchQuery = '';
+                    });
+                  },
+                )
+              : null,
         ),
       ),
     );
@@ -307,12 +323,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
         final docs = snapshot.data?.docs ?? [];
 
-        if (docs.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.only(top: 18),
+        final allCats = docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return CatModel.fromMap(doc.id, data);
+        }).toList();
+
+        final cats = allCats.where((cat) {
+          final query = searchQuery.toLowerCase();
+
+          return cat.name.toLowerCase().contains(query) ||
+              cat.breed.toLowerCase().contains(query) ||
+              cat.location.toLowerCase().contains(query) ||
+              cat.age.toLowerCase().contains(query);
+        }).toList();
+
+        if (cats.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 18),
             child: Text(
-              'Belum ada kucing yang tersedia untuk adopsi',
-              style: TextStyle(
+              searchQuery.isEmpty
+                  ? 'Belum ada kucing yang tersedia untuk adopsi'
+                  : 'Tidak ada kucing yang cocok dengan "$searchQuery"',
+              style: const TextStyle(
                 fontSize: 15,
                 color: AppColors.secondaryText,
                 fontWeight: FontWeight.w600,
@@ -320,11 +352,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           );
         }
-
-        final cats = docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return CatModel.fromMap(doc.id, data);
-        }).toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,

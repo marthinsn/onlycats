@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/cat_model.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
+import '../services/favorite_service.dart';
 
 class CatDetailScreen extends StatelessWidget {
   final CatModel cat;
 
   const CatDetailScreen({super.key, required this.cat});
 
-  @override
   Widget _buildCatImage() {
     final image = cat.image.trim();
 
@@ -43,6 +43,7 @@ class CatDetailScreen extends StatelessWidget {
     return Image.asset(image, fit: BoxFit.cover);
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -129,7 +130,7 @@ class CatDetailScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildTopInfoCard(),
+                          _buildTopInfoCard(context),
                           const SizedBox(height: 22),
                           _sectionTitle('INFORMASI KUCING'),
                           const SizedBox(height: 12),
@@ -150,8 +151,8 @@ class CatDetailScreen extends StatelessWidget {
                             runSpacing: 10,
                             children: cat.personalities.isNotEmpty
                                 ? cat.personalities
-                                      .map((item) => _personalityChip(item))
-                                      .toList()
+                                    .map((item) => _personalityChip(item))
+                                    .toList()
                                 : [_personalityChip('Belum ada data')],
                           ),
                           const SizedBox(height: 22),
@@ -226,7 +227,7 @@ class CatDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTopInfoCard() {
+  Widget _buildTopInfoCard(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -267,17 +268,47 @@ class CatDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFFFD8C7)),
-                ),
-                child: const Icon(
-                  Icons.favorite_border,
-                  color: AppColors.orange,
-                ),
+              StreamBuilder<bool>(
+                stream: FavoriteService().isFavorite(cat.id),
+                builder: (context, snapshot) {
+                  final isFav = snapshot.data ?? false;
+
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(26),
+                    onTap: () async {
+                      try {
+                        await FavoriteService().toggleFavorite(cat, isFav);
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              isFav
+                                  ? '${cat.name} dihapus dari favorit'
+                                  : '${cat.name} ditambahkan ke favorit',
+                            ),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal favorit: $e')),
+                        );
+                      }
+                    },
+                    child: Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: const Color(0xFFFFD8C7)),
+                      ),
+                      child: Icon(
+                        isFav ? Icons.favorite : Icons.favorite_border,
+                        color: AppColors.orange,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

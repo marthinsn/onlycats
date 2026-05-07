@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'rescue_screen.dart';
 import 'edit_profile_screen.dart';
 import '../data/profile_controller.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
+import '../services/favorite_service.dart';
 import 'change_password_screen.dart';
+import 'favorite_cats_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,11 +30,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserFromFirestore() async {
     final user = FirebaseAuth.instance.currentUser;
-
     if (user == null) return;
 
     final snapshot = await UserService().getUser(user.uid);
-
     if (!snapshot.exists) return;
 
     final data = snapshot.data() as Map<String, dynamic>;
@@ -54,9 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           content: const Text('Apakah kamu yakin ingin logout dari akun ini?'),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context, false);
-              },
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Batal'),
             ),
             ElevatedButton(
@@ -64,9 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: AppColors.orange,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                Navigator.pop(context, true);
-              },
+              onPressed: () => Navigator.pop(context, true),
               child: const Text('Logout'),
             ),
           ],
@@ -123,21 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildSectionCard(
-                    children: const [
-                      ProfileMenuTile(
-                        icon: Icons.favorite_border,
-                        title: 'Kucing Favorit',
-                        subtitle: '1 kucing',
-                      ),
-                      ProfileMenuTile(
-                        icon: Icons.assignment_outlined,
-                        title: 'Laporan Saya',
-                        subtitle: '0 laporan',
-                        isLast: true,
-                      ),
-                    ],
-                  ),
+                  _buildActivitySection(),
                   const SizedBox(height: 18),
                   const Text(
                     'PENGATURAN',
@@ -200,6 +184,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildActivitySection() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FavoriteService().getFavorites(),
+      builder: (context, snapshot) {
+        final favoriteCount = snapshot.data?.docs.length ?? 0;
+
+        return _buildSectionCard(
+          children: [
+            ProfileMenuTile(
+              icon: Icons.favorite_border,
+              title: 'Kucing Favorit',
+              subtitle: '$favoriteCount kucing',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FavoriteCatsScreen()),
+                );
+              },
+            ),
+            const ProfileMenuTile(
+              icon: Icons.assignment_outlined,
+              title: 'Laporan Saya',
+              subtitle: '0 laporan',
+              isLast: true,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -271,20 +286,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Row(
-        children: [
-          _buildStatItem('1', 'Favorit'),
-          _dividerVertical(),
-          _buildStatItem('0', 'Laporan'),
-          _dividerVertical(),
-          _buildStatItem('0', 'Diselamatkan'),
-        ],
-      ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FavoriteService().getFavorites(),
+      builder: (context, snapshot) {
+        final favoriteCount = snapshot.data?.docs.length ?? 0;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Row(
+            children: [
+              _buildStatItem('$favoriteCount', 'Favorit'),
+              _dividerVertical(),
+              _buildStatItem('0', 'Laporan'),
+              _dividerVertical(),
+              _buildStatItem('0', 'Diselamatkan'),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/cat_model.dart';
 import '../theme/app_colors.dart';
+import '../services/favorite_service.dart';
 
 class CatCard extends StatelessWidget {
   final CatModel cat;
@@ -54,6 +55,7 @@ class CatCard extends StatelessWidget {
                         )
                       : null,
                 ),
+
                 Positioned(
                   top: 18,
                   left: 18,
@@ -76,20 +78,51 @@ class CatCard extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 Positioned(
                   top: 18,
                   right: 18,
-                  child: CircleAvatar(
-                    radius: 24,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      cat.favorite ? Icons.favorite : Icons.favorite_border,
-                      color: AppColors.orange,
-                    ),
+                  child: StreamBuilder<bool>(
+                    stream: FavoriteService().isFavorite(cat.id),
+                    builder: (context, snapshot) {
+                      final isFav = snapshot.data ?? false;
+
+                      return GestureDetector(
+                        onTap: () async {
+                          try {
+                            await FavoriteService().toggleFavorite(cat, isFav);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  isFav
+                                      ? '${cat.name} dihapus dari favorit'
+                                      : '${cat.name} ditambahkan ke favorit',
+                                ),
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Gagal favorit: $e')),
+                            );
+                          }
+                        },
+                        child: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            isFav ? Icons.favorite : Icons.favorite_border,
+                            color: AppColors.orange,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
+
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 18, 22, 20),
               child: Column(
