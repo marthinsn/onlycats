@@ -4,6 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../services/admin_service.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_cats_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -189,7 +190,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               subtitle: 'Tambah & edit kucing',
               color: AppColors.purple,
               bg: const Color(0xFFEFE8FA),
-              onTap: () {}, // TODO: admin_cats_screen
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminCatsScreen()),
+              ),
             ),
             _MenuCard(
               icon: Icons.favorite_rounded,
@@ -267,7 +271,6 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     );
   }
 }
-
 
 class _QuickStatTile extends StatelessWidget {
   final String label;
