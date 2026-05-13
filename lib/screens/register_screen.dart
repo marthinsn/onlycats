@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
 
 import 'login_screen.dart';
 
@@ -17,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
   bool _isPasswordHidden = true;
@@ -87,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      await FirebaseAuth.instance.signOut();
+      await _authService.signOut();
 
       if (!mounted) return;
 

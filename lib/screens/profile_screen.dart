@@ -9,6 +9,7 @@ import 'edit_profile_screen.dart';
 import '../data/profile_controller.dart';
 import '../services/user_service.dart';
 import '../services/favorite_service.dart';
+import '../services/auth_service.dart';
 import 'change_password_screen.dart';
 import 'favorite_cats_screen.dart';
 
@@ -21,6 +22,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   int currentBottomNav = 2;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -75,7 +77,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmLogout != true) return;
 
     try {
-      await FirebaseAuth.instance.signOut();
+      await _authService.signOut();
 
       if (!mounted) return;
 

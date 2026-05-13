@@ -6,6 +6,8 @@ import 'dart:io';
 
 import 'package:image_picker/image_picker.dart';
 import '../services/cloudinary_service.dart';
+import 'map_picker_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class RescueFormScreen extends StatefulWidget {
   const RescueFormScreen({super.key});
@@ -25,6 +27,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
 
   bool isSubmitting = false;
   File? selectedImage;
+  LatLng? selectedLatLng;
 
   final List<String> conditionOptions = [
     'Terlantar',
@@ -175,9 +178,46 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
   Widget _buildLocationCard() {
     return _sectionCard(
       title: 'Lokasi',
-      child: _buildTextField(
-        controller: locationController,
-        hintText: 'Contoh: Jakarta Selatan',
+      child: Column(
+        children: [
+          _buildTextField(
+            controller: locationController,
+            hintText: 'Contoh: Jakarta Selatan',
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MapPickerScreen(
+                      initialLocation: selectedLatLng,
+                    ),
+                  ),
+                );
+
+                if (result != null) {
+                  setState(() {
+                    selectedLatLng = result['location'];
+                    locationController.text = result['address'];
+                  });
+                }
+              },
+              icon: const Icon(Icons.map_rounded),
+              label: const Text('Pilih di Peta'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.orange,
+                side: const BorderSide(color: AppColors.orange),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -381,6 +421,8 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
       await rescueService.createRescueReport(
         userId: user.uid,
         location: locationController.text.trim(),
+        latitude: selectedLatLng?.latitude,
+        longitude: selectedLatLng?.longitude,
         conditions: selectedConditions.toList(),
         description: descriptionController.text.trim(),
         phone: phoneController.text.trim(),

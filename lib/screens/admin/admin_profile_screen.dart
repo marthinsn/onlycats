@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../theme/app_colors.dart';
 import '../../services/user_service.dart';
+import '../../services/auth_service.dart';
 import '../../data/profile_controller.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
@@ -14,6 +15,8 @@ class AdminProfileScreen extends StatefulWidget {
 }
 
 class _AdminProfileScreenState extends State<AdminProfileScreen> {
+  final AuthService _authService = AuthService();
+
   @override
   void initState() {
     super.initState();
@@ -68,9 +71,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       ),
     );
     if (confirm == true) {
-      await FirebaseAuth.instance.signOut();
-      if (mounted)
-        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+      await _authService.signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      }
     }
   }
 

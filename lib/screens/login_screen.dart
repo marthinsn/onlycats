@@ -5,6 +5,7 @@ import 'forgot_password_screen.dart';
 import 'register_screen.dart';
 import '../services/admin_service.dart';
 import '../services/notification_listener_service.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
   bool _isPasswordHidden = true;
@@ -44,28 +46,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final UserCredential credential = await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email, password: password);
 
-      if (!mounted) return;
-
-      final user = credential.user;
-
-      if (user == null) {
-        _showMessage('Login gagal. User tidak ditemukan.');
-        return;
-      }
-
-      final loggedInEmail = user.email?.toLowerCase() ?? email;
-      final isAdmin = isAdminEmail(loggedInEmail);
-
-      // Listener notifikasi dijalankan setelah login berhasil.
-      // Untuk admin tidak wajib, tapi aman kalau dijalankan juga.
-      // Kalau hanya user biasa yang mau menerima notifikasi, pakai kondisi !isAdmin.
-      NotificationListenerService.startListening(user.uid);
-
-      if (isAdmin) {
-        Navigator.pushReplacementNamed(context, '/admin/home');
-      } else {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
+      _handleLoginSuccess(credential);
     } on FirebaseAuthException catch (e) {
       String message = 'Login gagal. Silakan coba lagi.';
 
@@ -92,6 +73,52 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final credential = await _authService.signInWithGoogle();
+
+      if (credential != null) {
+        _handleLoginSuccess(credential);
+      }
+    } on FirebaseAuthException catch (e) {
+      _showMessage('Login Google gagal: ${e.message}');
+    } catch (e) {
+      _showMessage('Terjadi kesalahan: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _handleLoginSuccess(UserCredential credential) {
+    if (!mounted) return;
+
+    final user = credential.user;
+
+    if (user == null) {
+      _showMessage('Login gagal. User tidak ditemukan.');
+      return;
+    }
+
+    final loggedInEmail = user.email?.toLowerCase() ?? '';
+    final isAdmin = isAdminEmail(loggedInEmail);
+
+    NotificationListenerService.startListening(user.uid);
+
+    if (isAdmin) {
+      Navigator.pushReplacementNamed(context, '/admin/home');
+    } else {
+      Navigator.pushReplacementNamed(context, '/home');
     }
   }
 
@@ -230,11 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     'Lanjut dengan Google',
                     style: TextStyle(color: Colors.black87),
                   ),
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          _showMessage('Login Google belum dibuat.');
-                        },
+                  onPressed: _isLoading ? null : _loginWithGoogle,
                 ),
               ),
 

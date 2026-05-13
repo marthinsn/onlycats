@@ -1,6 +1,8 @@
 class RescueReportModel {
   final String id;
   final String location;
+  final double? latitude;
+  final double? longitude;
   final List<String> conditions;
   final String description;
   final String phone;
@@ -11,6 +13,8 @@ class RescueReportModel {
   const RescueReportModel({
     required this.id,
     required this.location,
+    this.latitude,
+    this.longitude,
     required this.conditions,
     required this.description,
     required this.phone,
@@ -23,6 +27,8 @@ class RescueReportModel {
     return RescueReportModel(
       id: id,
       location: map['location'] ?? '',
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
       conditions: List<String>.from(map['conditions'] ?? []),
       description: map['description'] ?? '',
       phone: map['phone'] ?? '',
@@ -37,6 +43,8 @@ class RescueReportModel {
   Map<String, dynamic> toMap() {
     return {
       'location': location,
+      'latitude': latitude,
+      'longitude': longitude,
       'conditions': conditions,
       'description': description,
       'phone': phone,

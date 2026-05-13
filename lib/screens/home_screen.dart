@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../widgets/cat_card.dart';
 import '../widgets/filter_chip_item.dart';
@@ -10,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cat_model.dart';
 import '../widgets/category_card.dart';
 import 'adoption_form_screen.dart';
+import '../services/user_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int currentBottomNav = 0;
   String searchQuery = '';
+  final User? currentUser = FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
@@ -93,114 +96,135 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTopSection() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Selamat Datang 👋',
-                style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'OnlyCats',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF203554),
-                ),
-              ),
-              SizedBox(height: 14),
-              Text(
-                'Halo, Penyelamat Kucing!',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.primaryText,
-                ),
-              ),
-              SizedBox(height: 6),
-              Text(
-                'Ada 5 kucing butuh bantuan mu',
-                style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
-              ),
-            ],
-          ),
-        ),
-        Column(
+    return FutureBuilder<DocumentSnapshot>(
+      future: currentUser != null
+          ? UserService().getUser(currentUser!.uid)
+          : null,
+      builder: (context, snapshot) {
+        String displayName = "OnlyCats";
+        String initial = "O";
+
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
+          displayName = data['name'] ?? currentUser?.displayName ?? "OnlyCats";
+        } else if (currentUser != null) {
+          displayName = currentUser?.displayName ?? currentUser?.email?.split('@').first ?? "OnlyCats";
+        }
+
+        if (displayName.isNotEmpty) {
+          initial = displayName[0].toUpperCase();
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(40),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
-              child: CircleAvatar(
-                radius: 34,
-                backgroundColor: AppColors.softOrange,
-                child: const Text(
-                  'A',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const NotificationScreen()),
-                );
-              },
-              child: Stack(
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 14,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.primaryText,
-                      size: 28,
+                  const Text(
+                    'Selamat Datang 👋',
+                    style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF203554),
                     ),
                   ),
-                  Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                      ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Halo, Penyelamat Kucing!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryText,
                     ),
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Ada 5 kucing butuh bantuan mu',
+                    style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
                   ),
                 ],
               ),
             ),
+            Column(
+              children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(40),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 34,
+                    backgroundColor: AppColors.softOrange,
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                    );
+                  },
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: AppColors.primaryText,
+                          size: 28,
+                        ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 

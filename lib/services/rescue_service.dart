@@ -9,6 +9,8 @@ class RescueService {
   Future<String> createRescueReport({
     required String userId,
     required String location,
+    double? latitude,
+    double? longitude,
     required List<String> conditions,
     required String description,
     required String phone,
@@ -20,6 +22,8 @@ class RescueService {
     final report = RescueReportModel(
       id: doc.id,
       location: location,
+      latitude: latitude,
+      longitude: longitude,
       conditions: conditions,
       description: description,
       phone: phone,
