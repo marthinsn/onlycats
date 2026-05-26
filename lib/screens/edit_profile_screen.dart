@@ -177,53 +177,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 final user = auth.currentUser;
 
-                if (user != null) {
-                  final updatedProfile = profileController.profile.copyWith(
-                    fullName: fullNameController.text,
-                    username: usernameController.text,
-                    bio: bioController.text,
-                    email: emailController.text,
-                    birthDate: birthDateController.text,
-                    phone: phoneController.text,
-                    city: cityController.text,
-                    instagram: instagramController.text,
-                    twitter: twitterController.text,
-                    facebook: facebookController.text,
-                    housingType: housingTypeController.text,
-                    petExperience: petExperienceController.text,
-                    gender: selectedGender,
-                    profileImagePath: selectedImagePath,
-                  );
-
-                  profileController.updateProfile(updatedProfile);
-
-                  await userService.saveUserData(user.uid, {
-                    'name': fullNameController.text,
-                    'username': usernameController.text,
-                    'bio': bioController.text,
-                    'email': emailController.text,
-                    'birthDate': birthDateController.text,
-                    'phone': phoneController.text,
-                    'city': cityController.text,
-                    'instagram': instagramController.text,
-                    'twitter': twitterController.text,
-                    'facebook': facebookController.text,
-                    'housingType': housingTypeController.text,
-                    'petExperience': petExperienceController.text,
-                    'gender': selectedGender,
-                    'profileImagePath': selectedImagePath,
-                  });
-
-                  if (!context.mounted) return;
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profil berhasil disimpan')),
-                  );
-                } else {
+                if (user == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('User belum login')),
                   );
+                  return;
                 }
+
+                final updatedProfile = profileController.profile.copyWith(
+                  fullName: fullNameController.text.trim(),
+                  username: usernameController.text.trim(),
+                  bio: bioController.text.trim(),
+                  email: emailController.text.trim(),
+                  birthDate: birthDateController.text.trim(),
+                  phone: phoneController.text.trim(),
+                  city: cityController.text.trim(),
+                  instagram: instagramController.text.trim(),
+                  twitter: twitterController.text.trim(),
+                  facebook: facebookController.text.trim(),
+                  housingType: housingTypeController.text.trim(),
+                  petExperience: petExperienceController.text.trim(),
+                  gender: selectedGender,
+                  profileImagePath: selectedImagePath,
+                );
+
+                profileController.updateProfile(updatedProfile);
+
+                await userService.saveUserData(user.uid, {
+                  'name': fullNameController.text.trim(),
+                  'username': usernameController.text.trim(),
+                  'bio': bioController.text.trim(),
+                  'email': emailController.text.trim(),
+                  'birthDate': birthDateController.text.trim(),
+                  'phone': phoneController.text.trim(),
+                  'city': cityController.text.trim(),
+                  'instagram': instagramController.text.trim(),
+                  'twitter': twitterController.text.trim(),
+                  'facebook': facebookController.text.trim(),
+                  'housingType': housingTypeController.text.trim(),
+                  'petExperience': petExperienceController.text.trim(),
+                  'gender': selectedGender,
+                  'profileImagePath': selectedImagePath,
+                });
+
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Profil berhasil disimpan')),
+                );
+
+                Navigator.pop(context, true);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.orange,

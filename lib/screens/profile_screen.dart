@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'dart:io';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
 import 'rescue_screen.dart';
@@ -45,6 +45,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         username: data['username'] ?? profileController.profile.username,
         bio: data['bio'] ?? profileController.profile.bio,
         email: data['email'] ?? profileController.profile.email,
+        birthDate: data['birthDate'] ?? profileController.profile.birthDate,
+        phone: data['phone'] ?? profileController.profile.phone,
+        city: data['city'] ?? profileController.profile.city,
+        instagram: data['instagram'] ?? profileController.profile.instagram,
+        twitter: data['twitter'] ?? profileController.profile.twitter,
+        facebook: data['facebook'] ?? profileController.profile.facebook,
+        housingType:
+            data['housingType'] ?? profileController.profile.housingType,
+        petExperience:
+            data['petExperience'] ?? profileController.profile.petExperience,
+        gender: data['gender'] ?? profileController.profile.gender,
+        profileImagePath:
+            data['profileImagePath'] ??
+            profileController.profile.profileImagePath,
       ),
     );
   }
@@ -190,37 +204,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildActivitySection() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return _buildSectionCard(
+        children: [
+          ProfileMenuTile(
+            icon: Icons.favorite_border,
+            title: 'Kucing Favorit',
+            subtitle: '0 kucing',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const FavoriteCatsScreen()),
+              );
+            },
+          ),
+          const ProfileMenuTile(
+            icon: Icons.assignment_outlined,
+            title: 'Laporan Saya',
+            subtitle: '0 laporan',
+            isLast: true,
+          ),
+        ],
+      );
+    }
+
     return StreamBuilder<QuerySnapshot>(
       stream: FavoriteService().getFavorites(),
-      builder: (context, snapshot) {
-        final favoriteCount = snapshot.data?.docs.length ?? 0;
+      builder: (context, favoriteSnapshot) {
+        final favoriteCount = favoriteSnapshot.data?.docs.length ?? 0;
 
-        return _buildSectionCard(
-          children: [
-            ProfileMenuTile(
-              icon: Icons.favorite_border,
-              title: 'Kucing Favorit',
-              subtitle: '$favoriteCount kucing',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const FavoriteCatsScreen()),
-                );
-              },
-            ),
-            const ProfileMenuTile(
-              icon: Icons.assignment_outlined,
-              title: 'Laporan Saya',
-              subtitle: '0 laporan',
-              isLast: true,
-            ),
-          ],
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('rescue_reports')
+              .where('userId', isEqualTo: user.uid)
+              .snapshots(),
+          builder: (context, reportSnapshot) {
+            final reportCount = reportSnapshot.data?.docs.length ?? 0;
+
+            return _buildSectionCard(
+              children: [
+                ProfileMenuTile(
+                  icon: Icons.favorite_border,
+                  title: 'Kucing Favorit',
+                  subtitle: '$favoriteCount kucing',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FavoriteCatsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ProfileMenuTile(
+                  icon: Icons.assignment_outlined,
+                  title: 'Laporan Saya',
+                  subtitle: '$reportCount laporan',
+                  isLast: true,
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
   Widget _buildProfileHeader(profile) {
+    final String? imagePath = profile.profileImagePath;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -236,11 +290,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
               color: const Color(0xFFF8EAEA),
               borderRadius: BorderRadius.circular(37),
             ),
-            child: const Icon(
-              Icons.person_outline,
-              size: 38,
-              color: AppColors.orange,
-            ),
+            clipBehavior: Clip.antiAlias,
+            child: imagePath != null && imagePath.isNotEmpty
+                ? Image.file(
+                    File(imagePath),
+                    width: 74,
+                    height: 74,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.person_outline,
+                        size: 38,
+                        color: AppColors.orange,
+                      );
+                    },
+                  )
+                : const Icon(
+                    Icons.person_outline,
+                    size: 38,
+                    color: AppColors.orange,
+                  ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -288,25 +357,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatsCard() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            _buildStatItem('0', 'Favorit'),
+            _dividerVertical(),
+            _buildStatItem('0', 'Laporan'),
+          ],
+        ),
+      );
+    }
+
     return StreamBuilder<QuerySnapshot>(
       stream: FavoriteService().getFavorites(),
-      builder: (context, snapshot) {
-        final favoriteCount = snapshot.data?.docs.length ?? 0;
+      builder: (context, favoriteSnapshot) {
+        final favoriteCount = favoriteSnapshot.data?.docs.length ?? 0;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Row(
-            children: [
-              _buildStatItem('$favoriteCount', 'Favorit'),
-              _dividerVertical(),
-              _buildStatItem('0', 'Laporan'),
-              _dividerVertical(),
-              _buildStatItem('0', 'Diselamatkan'),
-            ],
-          ),
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('rescue_reports')
+              .where('userId', isEqualTo: user.uid)
+              .snapshots(),
+          builder: (context, reportSnapshot) {
+            final reportCount = reportSnapshot.data?.docs.length ?? 0;
+
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Row(
+                children: [
+                  _buildStatItem('$favoriteCount', 'Favorit'),
+                  _dividerVertical(),
+                  _buildStatItem('$reportCount', 'Laporan'),
+                ],
+              ),
+            );
+          },
         );
       },
     );

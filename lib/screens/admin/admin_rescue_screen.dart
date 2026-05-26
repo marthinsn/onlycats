@@ -5,6 +5,8 @@ import '../../theme/app_colors.dart';
 import '../../services/notification_service.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_publish_cat_screen.dart';
+import 'admin_home_screen.dart';
+import 'admin_rescue_detail_screen.dart';
 
 class AdminRescueScreen extends StatefulWidget {
   const AdminRescueScreen({super.key});
@@ -230,32 +232,7 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Laporan Rescue',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.primaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Kelola semua laporan masuk',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildFilterChips(),
-                ],
-              ),
-            ),
+            _buildHeader(),
             const SizedBox(height: 14),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
@@ -292,6 +269,63 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
+                  );
+                },
+                child: Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Text(
+                  'Laporan Rescue',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          const Padding(
+            padding: EdgeInsets.only(left: 56),
+            child: Text(
+              'Kelola semua laporan masuk',
+              style: TextStyle(fontSize: 15, color: AppColors.secondaryText),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildFilterChips(),
+        ],
       ),
     );
   }
@@ -341,179 +375,196 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
     final photoUrl = data['rescuePhotoUrl'] ?? '';
     final conditions = List<String>.from(data['conditions'] ?? []);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildRescueImage(photoUrl),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryText,
+    void openDetail() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) =>
+              AdminRescueDetailScreen(reportId: docId, reportData: data),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: openDetail,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildRescueImage(photoUrl),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          location,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryText,
+                          ),
                         ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showStatusDialog(docId, status, data),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _statusBg(status),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              status,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          _showStatusDialog(docId, status, data);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _statusBg(status),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                status,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: _statusColor(status),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.expand_more_rounded,
+                                size: 16,
                                 color: _statusColor(status),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.expand_more_rounded,
-                              size: 16,
-                              color: _statusColor(status),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
+                    ],
+                  ),
+                  if (description.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.secondaryText,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-
-                if (description.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.secondaryText,
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-
-                const SizedBox(height: 8),
-                Text(
-                  'HP: $phone',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.secondaryText,
-                  ),
-                ),
-
-                if (notes.toString().isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Catatan: $notes',
+                    'HP: $phone',
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.secondaryText,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
-
-                if (conditions.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: conditions.map((c) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF9EDE8),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          c,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.orange,
-                            fontWeight: FontWeight.w600,
+                  if (notes.toString().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Catatan: $notes',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.secondaryText,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                  if (conditions.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: conditions.map((c) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                if (status == 'Selesai' && data['publishedCatId'] == null) ...[
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AdminPublishCatScreen(
-                              rescueReportId: docId,
-                              rescueData: data,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9EDE8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            c,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.orange,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         );
-                      },
-                      icon: const Icon(Icons.pets_rounded, color: Colors.white),
-                      label: const Text(
-                        'Publish ke Adopsi',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
+                      }).toList(),
+                    ),
+                  ],
+                  if (status == 'Selesai' &&
+                      data['publishedCatId'] == null) ...[
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 46,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => AdminPublishCatScreen(
+                                rescueReportId: docId,
+                                rescueData: data,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.pets_rounded,
+                          color: Colors.white,
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.orange,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                        label: const Text(
+                          'Publish ke Adopsi',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.orange,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

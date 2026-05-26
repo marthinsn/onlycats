@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../theme/app_colors.dart';
 import '../../services/user_service.dart';
 import '../../services/auth_service.dart';
@@ -23,20 +24,58 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     _loadUser();
   }
 
+  String _getAdminNameFromEmail(String email) {
+    if (email.isEmpty) return 'Admin';
+
+    final namePart = email.split('@').first.trim();
+
+    if (namePart.isEmpty) return 'Admin';
+
+    return namePart[0].toUpperCase() + namePart.substring(1);
+  }
+
   Future<void> _loadUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final snap = await UserService().getUser(user.uid);
-    if (!snap.exists) return;
-    final data = snap.data() as Map<String, dynamic>;
-    profileController.updateProfile(
-      profileController.profile.copyWith(
-        fullName: data['name'] ?? profileController.profile.fullName,
-        username: data['username'] ?? profileController.profile.username,
-        email: data['email'] ?? profileController.profile.email,
-        bio: data['bio'] ?? profileController.profile.bio,
-      ),
-    );
+
+    final fallbackEmail = user.email ?? 'admin@onlycats.com';
+    final fallbackName = _getAdminNameFromEmail(fallbackEmail);
+
+    try {
+      final snap = await UserService().getUser(user.uid);
+
+      if (!snap.exists) {
+        profileController.updateProfile(
+          profileController.profile.copyWith(
+            fullName: fallbackName,
+            email: fallbackEmail,
+          ),
+        );
+        return;
+      }
+
+      final data = snap.data() as Map<String, dynamic>;
+
+      profileController.updateProfile(
+        profileController.profile.copyWith(
+          fullName: (data['name'] ?? '').toString().trim().isNotEmpty
+              ? data['name']
+              : fallbackName,
+          username: data['username'] ?? profileController.profile.username,
+          email: (data['email'] ?? '').toString().trim().isNotEmpty
+              ? data['email']
+              : fallbackEmail,
+          bio: data['bio'] ?? profileController.profile.bio,
+        ),
+      );
+    } catch (_) {
+      profileController.updateProfile(
+        profileController.profile.copyWith(
+          fullName: fallbackName,
+          email: fallbackEmail,
+        ),
+      );
+    }
   }
 
   Future<void> _logout() async {
@@ -70,6 +109,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         ],
       ),
     );
+
     if (confirm == true) {
       await _authService.signOut();
       if (mounted) {
@@ -80,6 +120,10 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authEmail =
+        FirebaseAuth.instance.currentUser?.email ?? 'admin@onlycats.com';
+    final authName = _getAdminNameFromEmail(authEmail);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       bottomNavigationBar: const AdminBottomNav(currentIndex: 2),
@@ -87,13 +131,24 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         animation: profileController,
         builder: (context, _) {
           final profile = profileController.profile;
+
+          final displayEmail = profile.email.trim().isNotEmpty
+              ? profile.email
+              : authEmail;
+
+          final displayName =
+              profile.fullName.trim().isNotEmpty &&
+                  profile.fullName != 'Nama Pengguna'
+              ? profile.fullName
+              : authName;
+
           return SafeArea(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildAdminHeader(profile),
+                  _buildAdminHeader(name: displayName, email: displayEmail),
                   const SizedBox(height: 20),
                   _buildDashboardBanner(context),
                   const SizedBox(height: 24),
@@ -143,7 +198,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   const SizedBox(height: 10),
                   _buildSectionCard(
                     children: [
-                      _AdminMenuTile(
+                      const _AdminMenuTile(
                         icon: Icons.info_outline,
                         label: 'Tentang Aplikasi',
                         subtitle: 'v1.0.0',
@@ -167,7 +222,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     );
   }
 
-  Widget _buildAdminHeader(profile) {
+  Widget _buildAdminHeader({required String name, required String email}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -206,7 +261,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  profile.fullName.isNotEmpty ? profile.fullName : 'Admin',
+                  name,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -215,7 +270,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  profile.email,
+                  email,
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.secondaryText,

@@ -1,8 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
+import '../models/cat_model.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 
 class AdoptionFormScreen extends StatefulWidget {
-  const AdoptionFormScreen({super.key});
+  final CatModel cat;
+
+  const AdoptionFormScreen({super.key, required this.cat});
 
   @override
   State<AdoptionFormScreen> createState() => _AdoptionFormScreenState();
@@ -19,6 +26,8 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
   String housingType = 'Rumah';
   String petExperience = 'Belum pernah';
 
+  bool isSubmitting = false;
+
   @override
   void dispose() {
     fullNameController.dispose();
@@ -28,6 +37,98 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
     reasonController.dispose();
     experienceController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitAdoptionForm() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      _showMessage('Kamu harus login terlebih dahulu');
+      return;
+    }
+
+    if (fullNameController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty ||
+        cityController.text.trim().isEmpty ||
+        jobController.text.trim().isEmpty ||
+        reasonController.text.trim().isEmpty ||
+        experienceController.text.trim().isEmpty) {
+      _showMessage('Mohon lengkapi semua data form adopsi');
+      return;
+    }
+
+    setState(() {
+      isSubmitting = true;
+    });
+
+    try {
+      final adoptionRef = FirebaseFirestore.instance
+          .collection('adoptions')
+          .doc();
+
+      await adoptionRef.set({
+        'id': adoptionRef.id,
+
+        'userId': user.uid,
+        'userEmail': user.email ?? '',
+
+        'catId': widget.cat.id,
+        'catName': widget.cat.name,
+        'catImage': widget.cat.image,
+        'catBreed': widget.cat.breed,
+        'catAge': widget.cat.age,
+        'catLocation': widget.cat.location,
+
+        'shelterName': widget.cat.shelterName,
+        'shelterLocation': widget.cat.shelterLocation,
+
+        'fullName': fullNameController.text.trim(),
+        'phone': phoneController.text.trim(),
+        'city': cityController.text.trim(),
+        'job': jobController.text.trim(),
+        'housingType': housingType,
+        'petExperience': petExperience,
+        'reason': reasonController.text.trim(),
+        'experience': experienceController.text.trim(),
+
+        'status': 'on hold',
+        'adminNote': '',
+
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      await NotificationService().createNotification(
+        userId: user.uid,
+        title: 'Form adopsi berhasil dikirim',
+        message:
+            'Ajuan adopsi kamu untuk ${widget.cat.name} sedang menunggu ditinjau admin.',
+        type: 'adoption_submit',
+        adoptionId: adoptionRef.id,
+        catId: widget.cat.id,
+      );
+
+      if (!mounted) return;
+
+      _showMessage('Form adopsi berhasil dikirim');
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      _showMessage('Gagal mengirim form adopsi: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -43,6 +144,8 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                 child: Column(
                   children: [
+                    _buildCatSummaryCard(),
+                    const SizedBox(height: 18),
                     _sectionCard(
                       title: 'Data Diri',
                       child: Column(
@@ -83,8 +186,9 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                               'Kos',
                             ],
                             onChanged: (value) {
+                              if (value == null) return;
                               setState(() {
-                                housingType = value!;
+                                housingType = value;
                               });
                             },
                           ),
@@ -97,8 +201,9 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
                               'Sudah berpengalaman',
                             ],
                             onChanged: (value) {
+                              if (value == null) return;
                               setState(() {
-                                petExperience = value!;
+                                petExperience = value;
                               });
                             },
                           ),
@@ -133,6 +238,85 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCatSummaryCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: widget.cat.image.startsWith('http')
+                ? Image.network(
+                    widget.cat.image,
+                    width: 76,
+                    height: 76,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return _catImagePlaceholder();
+                    },
+                  )
+                : widget.cat.image.isNotEmpty
+                ? Image.asset(
+                    widget.cat.image,
+                    width: 76,
+                    height: 76,
+                    fit: BoxFit.cover,
+                  )
+                : _catImagePlaceholder(),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.cat.name,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${widget.cat.breed} · ${widget.cat.age}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  widget.cat.shelterLocation.isNotEmpty
+                      ? widget.cat.shelterLocation
+                      : widget.cat.location,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.secondaryText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _catImagePlaceholder() {
+    return Container(
+      width: 76,
+      height: 76,
+      color: const Color(0xFFF3ECE8),
+      child: const Icon(Icons.pets_rounded, color: AppColors.orange),
     );
   }
 
@@ -184,24 +368,29 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
         width: double.infinity,
         height: 58,
         child: ElevatedButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Form adopsi berhasil dikirim')),
-            );
-            Navigator.pop(context);
-          },
+          onPressed: isSubmitting ? null : _submitAdoptionForm,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.orange,
             foregroundColor: Colors.white,
+            disabledBackgroundColor: Colors.grey.shade300,
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
           ),
-          child: const Text(
-            'Kirim Form Adopsi',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-          ),
+          child: isSubmitting
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.4,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text(
+                  'Kirim Form Adopsi',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                ),
         ),
       ),
     );

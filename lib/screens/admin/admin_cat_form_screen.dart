@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:image_picker/image_picker.dart';
+import '../../services/cloudinary_service.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../services/cat_service.dart';
@@ -15,7 +19,22 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final CatService _service = CatService();
   bool _loading = false;
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
+  File? _selectedImage;
+  String _currentImageUrl = '';
+  final List<String> _personalityOptions = [
+    'Jinak',
+    'Manja',
+    'Ramah',
+    'Aktif',
+    'Tenang',
+    'Pemalu',
+    'Mandiri',
+    'Suka Bermain',
+    'Penurut',
+    'Penyayang',
+  ];
   // ── Controllers ────────────────────────────────────────────────────────────
   late final TextEditingController _name;
   late final TextEditingController _breed;
@@ -62,6 +81,7 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
       _sterilized = c.sterilized;
       _available = c.available;
       _personalities = List.from(c.personalities);
+      _currentImageUrl = c.image;
     }
   }
 
@@ -82,37 +102,84 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+    );
+
+    if (pickedFile == null) return;
+
+    setState(() {
+      _selectedImage = File(pickedFile.path);
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (!isEdit && _selectedImage == null && _currentImageUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Foto kucing wajib diupload'),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
 
-    final data = {
-      'name': _name.text.trim(),
-      'breed': _breed.text.trim(),
-      'age': _age.text.trim(),
-      'location': _location.text.trim(),
-      'gender': _gender,
-      'color': _color.text.trim(),
-      'weight': _weight.text.trim(),
-      'size': _size.text.trim(),
-      'description': _description.text.trim(),
-      'shelterName': _shelterName.text.trim(),
-      'shelterLocation': _shelterLocation.text.trim(),
-      'shelterSince': _shelterSince.text.trim(),
-      'vaccinated': _vaccinated,
-      'sterilized': _sterilized,
-      'available': _available,
-      'personalities': _personalities,
-      'image': '', // URL gambar — bisa dikembangkan dengan image upload
-    };
-
     try {
+      String imageUrl = _currentImageUrl;
+
+      if (_selectedImage != null) {
+        imageUrl = await _cloudinaryService.uploadImage(
+          _selectedImage!,
+          folder: 'onlycats/adoption_cats',
+        );
+      }
+
+      final data = {
+        'name': _name.text.trim(),
+        'breed': _breed.text.trim(),
+        'age': _age.text.trim(),
+        'location': _location.text.trim(),
+        'gender': _gender,
+        'color': _color.text.trim(),
+        'weight': _weight.text.trim(),
+        'size': _size.text.trim(),
+        'description': _description.text.trim(),
+        'shelterName': _shelterName.text.trim(),
+        'shelterLocation': _shelterLocation.text.trim(),
+        'shelterSince': _shelterSince.text.trim(),
+        'vaccinated': _vaccinated,
+        'sterilized': _sterilized,
+        'available': _available,
+        'personalities': _personalities,
+        'image': imageUrl,
+        'adoptionPhotoUrl': imageUrl,
+      };
+
       if (isEdit) {
         await _service.updateCat(widget.cat!.id, data);
       } else {
         await _service.addCat(data);
       }
-      if (mounted) Navigator.pop(context);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isEdit
+                ? 'Data kucing berhasil diperbarui'
+                : 'Kucing berhasil dipublish ke adopsi',
+          ),
+        ),
+      );
+
+      Navigator.pop(context);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -133,6 +200,16 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
     setState(() {
       _personalities.add(val);
       _personalityInput.clear();
+    });
+  }
+
+  void _togglePersonality(String personality) {
+    setState(() {
+      if (_personalities.contains(personality)) {
+        _personalities.remove(personality);
+      } else {
+        _personalities.add(personality);
+      }
     });
   }
 
@@ -185,6 +262,8 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                   children: [
+                    _buildSection('Foto Kucing', [_buildImagePicker()]),
+                    const SizedBox(height: 16),
                     _buildSection('Informasi Dasar', [
                       _field(_name, 'Nama Kucing', Icons.pets_rounded),
                       _field(_breed, 'Ras / Breed', Icons.category_outlined),
@@ -292,6 +371,72 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
+  Widget _buildImagePicker() {
+    Widget imageChild;
+
+    if (_selectedImage != null) {
+      imageChild = Image.file(
+        _selectedImage!,
+        width: double.infinity,
+        height: 180,
+        fit: BoxFit.cover,
+      );
+    } else if (_currentImageUrl.isNotEmpty) {
+      imageChild = Image.network(
+        _currentImageUrl,
+        width: double.infinity,
+        height: 180,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Center(
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: Colors.grey,
+              size: 44,
+            ),
+          );
+        },
+      );
+    } else {
+      imageChild = const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.add_photo_alternate_outlined,
+              color: AppColors.orange,
+              size: 42,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Upload foto kucing',
+              style: TextStyle(
+                color: AppColors.orange,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _loading ? null : _pickImage,
+      child: Container(
+        width: double.infinity,
+        height: 180,
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFFFD2C2), width: 2),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: imageChild,
+        ),
+      ),
+    );
+  }
 
   Widget _buildSection(String title, List<Widget> children) {
     return Container(
@@ -432,39 +577,48 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   }
 
   Widget _buildPersonalityInput() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: TextFormField(
-            controller: _personalityInput,
-            decoration: InputDecoration(
-              hintText: 'Cth: Ramah, Aktif, Pemalu...',
-              filled: true,
-              fillColor: AppColors.background,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-            ),
-            onFieldSubmitted: (_) => _addPersonality(),
+        const Text(
+          'Pilih kepribadian',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.secondaryText,
           ),
         ),
-        const SizedBox(width: 10),
-        GestureDetector(
-          onTap: _addPersonality,
-          child: Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF203554),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Icon(Icons.add_rounded, color: Colors.white),
-          ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: _personalityOptions.map((p) {
+            final selected = _personalities.contains(p);
+
+            return GestureDetector(
+              onTap: () => _togglePersonality(p),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? const Color(0xFF203554)
+                      : const Color(0xFFE8EDF4),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  p,
+                  style: TextStyle(
+                    color: selected ? Colors.white : const Color(0xFF203554),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

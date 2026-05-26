@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../theme/app_colors.dart';
 import '../../services/admin_service.dart';
+import 'admin_home_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -31,6 +33,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     setState(() {
       _loadData();
     });
+  }
+
+  void _goBackToAdminHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
+    );
   }
 
   @override
@@ -65,6 +74,30 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        GestureDetector(
+          onTap: _goBackToAdminHome,
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 20,
+              color: AppColors.primaryText,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,9 +165,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         if (snap.connectionState == ConnectionState.waiting) {
           return _buildStatsShimmer();
         }
-        if (snap.hasError) {
+
+        if (snap.hasError || !snap.hasData || snap.data == null) {
           return _buildErrorBox('Gagal memuat statistik', _refresh);
         }
+
         final s = snap.data!;
 
         return Column(
@@ -210,7 +245,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         if (snap.connectionState == ConnectionState.waiting) {
           return const SizedBox.shrink();
         }
-        if (!snap.hasData) return const SizedBox.shrink();
+
+        if (snap.hasError || !snap.hasData || snap.data == null) {
+          return const SizedBox.shrink();
+        }
+
         final s = snap.data!;
 
         return Column(
@@ -294,13 +333,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               );
             }
+
             if (snap.hasError) {
               return _buildErrorBox('Gagal memuat laporan terbaru', _refresh);
             }
+
             final list = snap.data ?? [];
+
             if (list.isEmpty) {
               return _buildEmptyState('Belum ada laporan rescue');
             }
+
             return Column(
               children: list
                   .map(
@@ -589,8 +632,15 @@ class _RecentRescueCard extends StatelessWidget {
   String _formatDate(DateTime dt) {
     final now = DateTime.now();
     final diff = now.difference(dt);
-    if (diff.inMinutes < 60) return '${diff.inMinutes} menit lalu';
-    if (diff.inHours < 24) return '${diff.inHours} jam lalu';
+
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes} menit lalu';
+    }
+
+    if (diff.inHours < 24) {
+      return '${diff.inHours} jam lalu';
+    }
+
     return '${diff.inDays} hari lalu';
   }
 

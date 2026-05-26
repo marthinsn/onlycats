@@ -5,6 +5,8 @@ import '../../services/admin_service.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_cats_screen.dart';
+import 'admin_rescue_detail_screen.dart';
+import 'admin_adoptions_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -109,14 +111,75 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return FutureBuilder<AdminStats>(
       future: _statsFuture,
       builder: (context, snap) {
-        final s = snap.data;
         final loading = snap.connectionState == ConnectionState.waiting;
+
+        if (loading) {
+          return Row(
+            children: const [
+              _QuickStatTile(
+                label: 'Kucing',
+                value: '-',
+                icon: Icons.pets_rounded,
+                color: AppColors.purple,
+                bg: Color(0xFFEFE8FA),
+              ),
+              SizedBox(width: 12),
+              _QuickStatTile(
+                label: 'Rescue',
+                value: '-',
+                icon: Icons.sos_rounded,
+                color: AppColors.danger,
+                bg: Color(0xFFFFEDEC),
+              ),
+              SizedBox(width: 12),
+              _QuickStatTile(
+                label: 'Adopsi',
+                value: '-',
+                icon: Icons.favorite_rounded,
+                color: AppColors.orange,
+                bg: Color(0xFFFFF0E8),
+              ),
+            ],
+          );
+        }
+
+        if (snap.hasError || !snap.hasData || snap.data == null) {
+          return Row(
+            children: const [
+              _QuickStatTile(
+                label: 'Kucing',
+                value: '0',
+                icon: Icons.pets_rounded,
+                color: AppColors.purple,
+                bg: Color(0xFFEFE8FA),
+              ),
+              SizedBox(width: 12),
+              _QuickStatTile(
+                label: 'Rescue',
+                value: '0',
+                icon: Icons.sos_rounded,
+                color: AppColors.danger,
+                bg: Color(0xFFFFEDEC),
+              ),
+              SizedBox(width: 12),
+              _QuickStatTile(
+                label: 'Adopsi',
+                value: '0',
+                icon: Icons.favorite_rounded,
+                color: AppColors.orange,
+                bg: Color(0xFFFFF0E8),
+              ),
+            ],
+          );
+        }
+
+        final s = snap.data!;
 
         return Row(
           children: [
             _QuickStatTile(
               label: 'Kucing',
-              value: loading ? '-' : '${s!.totalCats}',
+              value: '${s.totalCats}',
               icon: Icons.pets_rounded,
               color: AppColors.purple,
               bg: const Color(0xFFEFE8FA),
@@ -124,7 +187,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             const SizedBox(width: 12),
             _QuickStatTile(
               label: 'Rescue',
-              value: loading ? '-' : '${s!.totalRescueReports}',
+              value: '${s.totalRescueReports}',
               icon: Icons.sos_rounded,
               color: AppColors.danger,
               bg: const Color(0xFFFFEDEC),
@@ -132,7 +195,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
             const SizedBox(width: 12),
             _QuickStatTile(
               label: 'Adopsi',
-              value: loading ? '-' : '${s!.totalAdoptions}',
+              value: '${s.totalAdoptions}',
               icon: Icons.favorite_rounded,
               color: AppColors.orange,
               bg: const Color(0xFFFFF0E8),
@@ -201,7 +264,14 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               subtitle: 'Kelola form adopsi',
               color: AppColors.orange,
               bg: const Color(0xFFFFF0E8),
-              onTap: () {}, // TODO: admin_adoptions_screen
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminAdoptionsScreen(),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -247,6 +317,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
                 return _ActivityTile(
                   location: data['location'] ?? '-',
                   status: data['status'] ?? 'Menunggu',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminRescueDetailScreen(
+                          reportId: doc.id,
+                          reportData: data,
+                        ),
+                      ),
+                    );
+                  },
                 );
               }).toList(),
             );
@@ -408,8 +489,13 @@ class _MenuCard extends StatelessWidget {
 class _ActivityTile extends StatelessWidget {
   final String location;
   final String status;
+  final VoidCallback? onTap;
 
-  const _ActivityTile({required this.location, required this.status});
+  const _ActivityTile({
+    required this.location,
+    required this.status,
+    this.onTap,
+  });
 
   Color get _statusColor {
     switch (status) {
@@ -435,53 +521,57 @@ class _ActivityTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.sos_rounded, color: AppColors.danger, size: 22),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              location,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppColors.primaryText,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: _statusBg,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: _statusColor,
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.sos_rounded, color: AppColors.danger, size: 22),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                location,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryText,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: _statusBg,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                status,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: _statusColor,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

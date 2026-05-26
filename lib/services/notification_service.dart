@@ -9,6 +9,8 @@ class NotificationService {
     required String message,
     required String type,
     String? rescueReportId,
+    String? adoptionId,
+    String? catId,
   }) async {
     await _db.collection('notifications').add({
       'userId': userId,
@@ -16,6 +18,8 @@ class NotificationService {
       'message': message,
       'type': type,
       'rescueReportId': rescueReportId,
+      'adoptionId': adoptionId,
+      'catId': catId,
       'isRead': false,
       'createdAt': FieldValue.serverTimestamp(),
     });

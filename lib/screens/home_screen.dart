@@ -10,8 +10,10 @@ import 'cat_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cat_model.dart';
 import '../widgets/category_card.dart';
-import 'adoption_form_screen.dart';
 import '../services/user_service.dart';
+import 'my_adoptions_screen.dart';
+import 'dart:io';
+import '../data/profile_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -108,7 +110,10 @@ class _HomeScreenState extends State<HomeScreen> {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           displayName = data['name'] ?? currentUser?.displayName ?? "OnlyCats";
         } else if (currentUser != null) {
-          displayName = currentUser?.displayName ?? currentUser?.email?.split('@').first ?? "OnlyCats";
+          displayName =
+              currentUser?.displayName ??
+              currentUser?.email?.split('@').first ??
+              "OnlyCats";
         }
 
         if (displayName.isNotEmpty) {
@@ -124,7 +129,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const Text(
                     'Selamat Datang 👋',
-                    style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.secondaryText,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -144,43 +152,82 @@ class _HomeScreenState extends State<HomeScreen> {
                       color: AppColors.primaryText,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Ada 5 kucing butuh bantuan mu',
-                    style: TextStyle(fontSize: 16, color: AppColors.secondaryText),
-                  ),
                 ],
               ),
             ),
             Column(
               children: [
-                InkWell(
-                  borderRadius: BorderRadius.circular(40),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                AnimatedBuilder(
+                  animation: profileController,
+                  builder: (context, _) {
+                    final profile = profileController.profile;
+                    final imagePath = profile.profileImagePath;
+
+                    final avatarInitial =
+                        profile.fullName.trim().isNotEmpty &&
+                            profile.fullName != 'Nama Pengguna'
+                        ? profile.fullName.trim()[0].toUpperCase()
+                        : initial;
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(40),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        width: 68,
+                        height: 68,
+                        decoration: const BoxDecoration(
+                          color: AppColors.softOrange,
+                          shape: BoxShape.circle,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: imagePath != null && imagePath.isNotEmpty
+                            ? Image.file(
+                                File(imagePath),
+                                width: 68,
+                                height: 68,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
+                                      avatarInitial,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Text(
+                                  avatarInitial,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
+                      ),
                     );
                   },
-                  child: CircleAvatar(
-                    radius: 34,
-                    backgroundColor: AppColors.softOrange,
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const NotificationScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationScreen(),
+                      ),
                     );
                   },
                   child: Stack(
@@ -295,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const AdoptionFormScreen()),
+                MaterialPageRoute(builder: (_) => const MyAdoptionsScreen()),
               );
             },
           ),

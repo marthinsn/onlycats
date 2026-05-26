@@ -151,12 +151,12 @@ class CatDetailScreen extends StatelessWidget {
                             runSpacing: 10,
                             children: cat.personalities.isNotEmpty
                                 ? cat.personalities
-                                    .map((item) => _personalityChip(item))
-                                    .toList()
+                                      .map((item) => _personalityChip(item))
+                                      .toList()
                                 : [_personalityChip('Belum ada data')],
                           ),
                           const SizedBox(height: 22),
-                          _sectionTitle('DITITIPKAN OLEH'),
+                          _sectionTitle('TEMUI ${cat.name.toUpperCase()} DI'),
                           const SizedBox(height: 12),
                           _buildShelterCard(),
                         ],
@@ -196,7 +196,7 @@ class CatDetailScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => const AdoptionFormScreen(),
+                            builder: (_) => AdoptionFormScreen(cat: cat),
                           ),
                         );
                       },
