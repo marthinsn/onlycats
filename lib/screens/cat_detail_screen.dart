@@ -243,12 +243,16 @@ class CatDetailScreen extends StatelessWidget {
               Expanded(
                 child: Row(
                   children: [
-                    Text(
-                      cat.name,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primaryText,
+                    Expanded(
+                      child: Text(
+                        cat.name,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primaryText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -329,11 +333,15 @@ class CatDetailScreen extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 4),
-              Text(
-                cat.location,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: AppColors.secondaryText,
+              Expanded(
+                child: Text(
+                  cat.location,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: AppColors.secondaryText,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -488,6 +496,8 @@ class CatDetailScreen extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                     color: AppColors.primaryText,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -496,6 +506,8 @@ class CatDetailScreen extends StatelessWidget {
                     fontSize: 15,
                     color: AppColors.secondaryText,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),

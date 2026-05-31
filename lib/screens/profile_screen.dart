@@ -12,6 +12,8 @@ import '../services/favorite_service.dart';
 import '../services/auth_service.dart';
 import 'change_password_screen.dart';
 import 'favorite_cats_screen.dart';
+import 'faq_screen.dart';
+import 'about_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -176,14 +178,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           );
                         },
                       ),
-                      const ProfileMenuTile(
+                      ProfileMenuTile(
                         icon: Icons.help_outline,
                         title: 'Bantuan & FAQ',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const FaqScreen()),
+                          );
+                        },
                       ),
-                      const ProfileMenuTile(
+                      ProfileMenuTile(
                         icon: Icons.info_outline,
                         title: 'Tentang Aplikasi',
                         subtitle: 'v1.0.0',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AboutScreen()),
+                          );
+                        },
                       ),
                       ProfileMenuTile(
                         icon: Icons.logout_rounded,

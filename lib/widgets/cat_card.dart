@@ -130,12 +130,16 @@ class CatCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        cat.name,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryText,
+                      Expanded(
+                        child: Text(
+                          cat.name,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryText,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -173,11 +177,15 @@ class CatCard extends StatelessWidget {
                         size: 20,
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        cat.location,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: AppColors.secondaryText,
+                      Expanded(
+                        child: Text(
+                          cat.location,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            color: AppColors.secondaryText,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                     ],

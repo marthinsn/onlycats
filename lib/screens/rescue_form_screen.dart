@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/cloudinary_service.dart';
 import 'map_picker_screen.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart';
 
 class RescueFormScreen extends StatefulWidget {
   const RescueFormScreen({super.key});
