@@ -17,4 +17,10 @@ class AppColors {
   static const Color border = Color(0xFFE6E1DE);
   static const Color danger = Color(0xFFFF5A4D);
   static const Color iconGrey = Color(0xFF9A9CAF);
+
+  static Color? get textPrimary => null;
+
+  static Color? get textSecondary => null;
+
+  static Color? get textMuted => null;
 }

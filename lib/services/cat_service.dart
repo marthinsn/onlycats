@@ -63,6 +63,8 @@ class CatFirestoreModel {
   final bool available;
   final bool favorite;
   final List<String> personalities;
+  final double? latitude;
+  final double? longitude;
 
   CatFirestoreModel({
     required this.id,
@@ -85,6 +87,8 @@ class CatFirestoreModel {
     required this.available,
     required this.favorite,
     required this.personalities,
+    this.latitude,
+    this.longitude,
   });
 
   factory CatFirestoreModel.fromDoc(
@@ -115,6 +119,8 @@ class CatFirestoreModel {
       available: d['available'] ?? true,
       favorite: d['favorite'] ?? false,
       personalities: List<String>.from(d['personalities'] ?? []),
+      latitude: (d['latitude'] as num?)?.toDouble(),
+      longitude: (d['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -138,6 +144,8 @@ class CatFirestoreModel {
     'available': available,
     'favorite': favorite,
     'personalities': personalities,
+    'latitude': latitude,
+    'longitude': longitude,
     'status': available ? 'tersedia' : 'tidak tersedia',
   };
 }

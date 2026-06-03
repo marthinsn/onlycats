@@ -18,6 +18,8 @@ class CatModel {
   final String shelterLocation;
   final String shelterSince;
   final List<String> personalities;
+  final double? latitude;
+  final double? longitude;
 
   const CatModel({
     this.id = '',
@@ -39,6 +41,8 @@ class CatModel {
     required this.shelterLocation,
     required this.shelterSince,
     required this.personalities,
+    this.latitude,
+    this.longitude,
   });
 
   factory CatModel.fromMap(String id, Map<String, dynamic> data) {
@@ -62,6 +66,8 @@ class CatModel {
       shelterLocation: data['shelterLocation'] ?? data['location'] ?? '',
       shelterSince: data['shelterSince'] ?? '',
       personalities: List<String>.from(data['personalities'] ?? []),
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
     );
   }
 }

@@ -1,12 +1,15 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../services/cloudinary_service.dart';
 import '../../services/notification_service.dart';
 import '../../theme/app_colors.dart';
+import '../map_picker_screen.dart';
 
 class AdminPublishCatScreen extends StatefulWidget {
   final String rescueReportId;
@@ -33,7 +36,8 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
 
   final CloudinaryService cloudinaryService = CloudinaryService();
 
-  File? selectedImage;
+  Uint8List? selectedImageBytes;
+  LatLng? _selectedLatLng;
 
   String gender = 'male';
   String catSize = 'Sedang';
@@ -59,6 +63,12 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
 
     locationController.text = widget.rescueData['location'] ?? '';
     descriptionController.text = widget.rescueData['description'] ?? '';
+
+    final double? lat = (widget.rescueData['latitude'] as num?)?.toDouble();
+    final double? lng = (widget.rescueData['longitude'] as num?)?.toDouble();
+    if (lat != null && lng != null) {
+      _selectedLatLng = LatLng(lat, lng);
+    }
   }
 
   @override
@@ -81,13 +91,15 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
 
     if (pickedFile == null) return;
 
+    final bytes = await pickedFile.readAsBytes();
+
     setState(() {
-      selectedImage = File(pickedFile.path);
+      selectedImageBytes = bytes;
     });
   }
 
   Future<void> _publishCat() async {
-    if (selectedImage == null ||
+    if (selectedImageBytes == null ||
         nameController.text.trim().isEmpty ||
         breedController.text.trim().isEmpty ||
         ageController.text.trim().isEmpty ||
@@ -112,7 +124,7 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
 
     try {
       final adoptionPhotoUrl = await cloudinaryService.uploadImage(
-        selectedImage!,
+        selectedImageBytes!,
         folder: 'onlycats/adoption_cats',
       );
 
@@ -123,6 +135,8 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
         'breed': breedController.text.trim(),
         'age': ageController.text.trim(),
         'location': locationController.text.trim(),
+        'latitude': _selectedLatLng?.latitude,
+        'longitude': _selectedLatLng?.longitude,
         'image': adoptionPhotoUrl,
         'adoptionPhotoUrl': adoptionPhotoUrl,
 
@@ -241,6 +255,40 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
                           _buildTextField(
                             controller: locationController,
                             hintText: 'Lokasi',
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MapPickerScreen(
+                                      initialLocation: _selectedLatLng,
+                                    ),
+                                  ),
+                                );
+
+                                if (result != null) {
+                                  setState(() {
+                                    _selectedLatLng = result['location'];
+                                    locationController.text = result['address'];
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.map_rounded),
+                              label: const Text('Sesuaikan Titik di Peta'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.orange,
+                                side: const BorderSide(color: AppColors.orange),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -459,7 +507,7 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: const Color(0xFFFFD2C2), width: 2),
         ),
-        child: selectedImage == null
+        child: selectedImageBytes == null
             ? const Center(
                 child: Text(
                   'Upload foto final kucing',
@@ -472,8 +520,8 @@ class _AdminPublishCatScreenState extends State<AdminPublishCatScreen> {
               )
             : ClipRRect(
                 borderRadius: BorderRadius.circular(18),
-                child: Image.file(
-                  selectedImage!,
+                child: Image.memory(
+                  selectedImageBytes!,
                   width: double.infinity,
                   height: 160,
                   fit: BoxFit.cover,

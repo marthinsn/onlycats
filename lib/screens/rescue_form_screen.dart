@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/rescue_service.dart';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 import '../services/cloudinary_service.dart';
@@ -26,7 +27,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
   final CloudinaryService cloudinaryService = CloudinaryService();
 
   bool isSubmitting = false;
-  File? selectedImage;
+  Uint8List? selectedImageBytes;
   LatLng? selectedLatLng;
 
   final List<String> conditionOptions = [
@@ -56,8 +57,10 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
 
     if (pickedFile == null) return;
 
+    final bytes = await pickedFile.readAsBytes();
+
     setState(() {
-      selectedImage = File(pickedFile.path);
+      selectedImageBytes = bytes;
     });
   }
 
@@ -154,7 +157,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: const Color(0xFFFFD2C2), width: 2),
           ),
-          child: selectedImage == null
+          child: selectedImageBytes == null
               ? const Center(
                   child: Text(
                     'Upload foto kucing',
@@ -163,8 +166,8 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
                 )
               : ClipRRect(
                   borderRadius: BorderRadius.circular(18),
-                  child: Image.file(
-                    selectedImage!,
+                  child: Image.memory(
+                    selectedImageBytes!,
                     width: double.infinity,
                     height: 140,
                     fit: BoxFit.cover,
@@ -393,7 +396,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
       return;
     }
 
-    if (selectedImage == null ||
+    if (selectedImageBytes == null ||
         locationController.text.trim().isEmpty ||
         descriptionController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
@@ -414,7 +417,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
 
     try {
       final rescuePhotoUrl = await cloudinaryService.uploadImage(
-        selectedImage!,
+        selectedImageBytes!,
         folder: 'onlycats/rescue_reports',
       );
 

@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:image_picker/image_picker.dart';
 import '../../services/cloudinary_service.dart';
 import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../services/cat_service.dart';
+import '../map_picker_screen.dart';
+import 'package:latlong2/latlong.dart';
 
 class AdminCatFormScreen extends StatefulWidget {
   final CatFirestoreModel? cat; // null = tambah baru, ada isi = edit
@@ -21,7 +24,7 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   bool _loading = false;
   final CloudinaryService _cloudinaryService = CloudinaryService();
 
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
   String _currentImageUrl = '';
   final List<String> _personalityOptions = [
     'Jinak',
@@ -55,6 +58,7 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
   bool _sterilized = false;
   bool _available = true;
   List<String> _personalities = [];
+  LatLng? _selectedLatLng;
 
   bool get isEdit => widget.cat != null;
 
@@ -82,6 +86,9 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
       _available = c.available;
       _personalities = List.from(c.personalities);
       _currentImageUrl = c.image;
+      if (c.latitude != null && c.longitude != null) {
+        _selectedLatLng = LatLng(c.latitude!, c.longitude!);
+      }
     }
   }
 
@@ -110,15 +117,17 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
 
     if (pickedFile == null) return;
 
+    final bytes = await pickedFile.readAsBytes();
+
     setState(() {
-      _selectedImage = File(pickedFile.path);
+      _selectedImageBytes = bytes;
     });
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (!isEdit && _selectedImage == null && _currentImageUrl.isEmpty) {
+    if (!isEdit && _selectedImageBytes == null && _currentImageUrl.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Foto kucing wajib diupload'),
@@ -133,9 +142,9 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
     try {
       String imageUrl = _currentImageUrl;
 
-      if (_selectedImage != null) {
+      if (_selectedImageBytes != null) {
         imageUrl = await _cloudinaryService.uploadImage(
-          _selectedImage!,
+          _selectedImageBytes!,
           folder: 'onlycats/adoption_cats',
         );
       }
@@ -145,6 +154,8 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
         'breed': _breed.text.trim(),
         'age': _age.text.trim(),
         'location': _location.text.trim(),
+        'latitude': _selectedLatLng?.latitude,
+        'longitude': _selectedLatLng?.longitude,
         'gender': _gender,
         'color': _color.text.trim(),
         'weight': _weight.text.trim(),
@@ -269,6 +280,40 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
                       _field(_breed, 'Ras / Breed', Icons.category_outlined),
                       _field(_age, 'Umur (cth: 2 tahun)', Icons.cake_outlined),
                       _field(_location, 'Lokasi', Icons.location_on_outlined),
+                      const SizedBox(height: 4),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MapPickerScreen(
+                                  initialLocation: _selectedLatLng,
+                                ),
+                              ),
+                            );
+
+                            if (result != null) {
+                              setState(() {
+                                _selectedLatLng = result['location'];
+                                _location.text = result['address'];
+                              });
+                            }
+                          },
+                          icon: const Icon(Icons.map_rounded),
+                          label: const Text('Pilih Titik di Peta'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.orange,
+                            side: const BorderSide(color: AppColors.orange),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       _field(_color, 'Warna', Icons.palette_outlined),
                       _field(
                         _weight,
@@ -372,11 +417,11 @@ class _AdminCatFormScreenState extends State<AdminCatFormScreen> {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   Widget _buildImagePicker() {
-    Widget imageChild;
+    late Widget imageChild;
 
-    if (_selectedImage != null) {
-      imageChild = Image.file(
-        _selectedImage!,
+    if (_selectedImageBytes != null) {
+      imageChild = Image.memory(
+        _selectedImageBytes!,
         width: double.infinity,
         height: 180,
         fit: BoxFit.cover,

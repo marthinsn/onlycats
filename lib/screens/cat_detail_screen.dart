@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '../models/cat_model.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
@@ -159,6 +161,53 @@ class CatDetailScreen extends StatelessWidget {
                           _sectionTitle('TEMUI ${cat.name.toUpperCase()} DI'),
                           const SizedBox(height: 12),
                           _buildShelterCard(),
+                          if (cat.latitude != null && cat.longitude != null) ...[
+                            const SizedBox(height: 22),
+                            _sectionTitle('LOKASI PENJEMPUTAN'),
+                            const SizedBox(height: 12),
+                            Container(
+                              height: 200,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: const Color(0xFFE8DDD7)),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: FlutterMap(
+                                  options: MapOptions(
+                                    initialCenter:
+                                        LatLng(cat.latitude!, cat.longitude!),
+                                    initialZoom: 15,
+                                  ),
+                                  children: [
+                                    TileLayer(
+                                      urlTemplate:
+                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                      userAgentPackageName: 'com.example.onlycats',
+                                    ),
+                                    MarkerLayer(
+                                      markers: [
+                                        Marker(
+                                          point: LatLng(
+                                            cat.latitude!,
+                                            cat.longitude!,
+                                          ),
+                                          width: 45,
+                                          height: 45,
+                                          child: const Icon(
+                                            Icons.location_on,
+                                            color: AppColors.orange,
+                                            size: 40,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

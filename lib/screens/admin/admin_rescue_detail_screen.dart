@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../theme/app_colors.dart';
 
@@ -22,6 +24,8 @@ class AdminRescueDetailScreen extends StatelessWidget {
     final status = reportData['status'] ?? 'Menunggu';
     final userId = reportData['userId'] ?? '-';
     final conditions = List<String>.from(reportData['conditions'] ?? []);
+    final double? lat = (reportData['latitude'] as num?)?.toDouble();
+    final double? lng = (reportData['longitude'] as num?)?.toDouble();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -47,7 +51,56 @@ class AdminRescueDetailScreen extends StatelessWidget {
 
                     _sectionCard(
                       title: 'Informasi Lokasi',
-                      child: _infoText(location),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoText(location),
+                          if (lat != null && lng != null) ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              height: 180,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: FlutterMap(
+                                  options: MapOptions(
+                                    initialCenter: LatLng(lat, lng),
+                                    initialZoom: 15,
+                                    interactionOptions: const InteractionOptions(
+                                      flags: InteractiveFlag.none,
+                                    ),
+                                  ),
+                                  children: [
+                                    TileLayer(
+                                      urlTemplate:
+                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                      userAgentPackageName: 'com.example.onlycats',
+                                    ),
+                                    MarkerLayer(
+                                      markers: [
+                                        Marker(
+                                          point: LatLng(lat, lng),
+                                          width: 40,
+                                          height: 40,
+                                          child: const Icon(
+                                            Icons.location_on,
+                                            color: AppColors.orange,
+                                            size: 35,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
 
                     const SizedBox(height: 18),
