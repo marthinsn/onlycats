@@ -318,7 +318,7 @@ class _AdminAdoptionDetailScreenState extends State<AdminAdoptionDetailScreen> {
         foregroundColor: selected ? Colors.white : _statusColor(value),
         elevation: 0,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        side: BorderSide(color: _statusColor(value).withOpacity(0.4)),
+        side: BorderSide(color: _statusColor(value).withValues(alpha: 0.4)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: isUpdating && selected

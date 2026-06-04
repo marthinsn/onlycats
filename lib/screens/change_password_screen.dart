@@ -25,7 +25,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   int failedAttempts = 0;
   static const int maxAttempts = 5;
 
-  @override
   void _goToForgotPassword() {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -37,6 +36,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 
+  @override
   void dispose() {
     oldPasswordController.dispose();
     newPasswordController.dispose();

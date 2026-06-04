@@ -48,7 +48,6 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
     super.dispose();
   }
 
-  @override
   Future<void> _pickImage() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -64,6 +63,7 @@ class _RescueFormScreenState extends State<RescueFormScreen> {
     });
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F1EE),

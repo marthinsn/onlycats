@@ -84,7 +84,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -140,7 +140,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.07),
+                  color: Colors.black.withValues(alpha: 0.07),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -271,7 +271,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -489,7 +489,7 @@ class _StatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -653,7 +653,7 @@ class _RecentRescueCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),

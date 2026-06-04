@@ -41,47 +41,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   Future<void> _loadUser() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-<<<<<<< HEAD
-
-    final fallbackEmail = user.email ?? 'admin@onlycats.com';
-    final fallbackName = _getAdminNameFromEmail(fallbackEmail);
-
-    try {
-      final snap = await UserService().getUser(user.uid);
-
-      if (!snap.exists) {
-        profileController.updateProfile(
-          profileController.profile.copyWith(
-            fullName: fallbackName,
-            email: fallbackEmail,
-          ),
-        );
-        return;
-      }
-
-      final data = snap.data() as Map<String, dynamic>;
-
-      profileController.updateProfile(
-        profileController.profile.copyWith(
-          fullName: (data['name'] ?? '').toString().trim().isNotEmpty
-              ? data['name']
-              : fallbackName,
-          username: data['username'] ?? profileController.profile.username,
-          email: (data['email'] ?? '').toString().trim().isNotEmpty
-              ? data['email']
-              : fallbackEmail,
-          bio: data['bio'] ?? profileController.profile.bio,
-        ),
-      );
-    } catch (_) {
-      profileController.updateProfile(
-        profileController.profile.copyWith(
-          fullName: fallbackName,
-          email: fallbackEmail,
-        ),
-      );
-    }
-=======
     final snap = await UserService().getUser(user.uid);
     if (!snap.exists) return;
     final data = snap.data() as Map<String, dynamic>;
@@ -99,7 +58,6 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         facebook: data['facebook'] ?? '',
       ),
     );
->>>>>>> bda4f5887f94ab3aa27392974386fb9cbb9b1a8e
   }
 
   Future<void> _logout() async {
@@ -299,7 +257,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -389,7 +347,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF203554).withOpacity(0.25),
+              color: const Color(0xFF203554).withValues(alpha: 0.25),
               blurRadius: 18,
               offset: const Offset(0, 8),
             ),
@@ -401,7 +359,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Icon(
@@ -449,7 +407,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -483,7 +441,7 @@ class _AdminMenuTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final iColor = iconColor ?? const Color(0xFF203554);
     final iBg = iconColor != null
-        ? iconColor!.withOpacity(0.1)
+        ? iconColor!.withValues(alpha: 0.1)
         : const Color(0xFFE8EDF4);
 
     return Container(
