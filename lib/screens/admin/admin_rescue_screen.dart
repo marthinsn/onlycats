@@ -20,15 +20,10 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
   final List<String> _statuses = ['Semua', 'Menunggu', 'Diproses', 'Selesai'];
 
   Stream<QuerySnapshot> get _stream {
-    Query query = FirebaseFirestore.instance
+    return FirebaseFirestore.instance
         .collection('rescue_reports')
-        .orderBy('createdAt', descending: true);
-
-    if (_filterStatus != 'Semua') {
-      query = query.where('status', isEqualTo: _filterStatus);
-    }
-
-    return query.snapshots();
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 
   Future<void> _updateStatus({
@@ -248,7 +243,13 @@ class _AdminRescueScreenState extends State<AdminRescueScreen> {
                     return Center(child: Text('Error: ${snap.error}'));
                   }
 
-                  final docs = snap.data?.docs ?? [];
+                  var docs = snap.data?.docs ?? [];
+                  if (_filterStatus != 'Semua') {
+                    docs = docs.where((d) {
+                      final data = d.data() as Map<String, dynamic>;
+                      return data['status'] == _filterStatus;
+                    }).toList();
+                  }
 
                   if (docs.isEmpty) {
                     return _buildEmpty();

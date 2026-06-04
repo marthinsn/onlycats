@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../theme/app_colors.dart';
-import 'forgot_password_screen.dart';
+import '../../theme/app_colors.dart';
+import '../forgot_password_screen.dart';
 
-class ChangePasswordScreen extends StatefulWidget {
-  const ChangePasswordScreen({super.key});
+
+class AdminChangePasswordScreen extends StatefulWidget {
+  const AdminChangePasswordScreen({super.key});
 
   @override
-  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+  State<AdminChangePasswordScreen> createState() =>
+      _AdminChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class _AdminChangePasswordScreenState extends State<AdminChangePasswordScreen> {
   final TextEditingController oldPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController =
@@ -25,23 +27,26 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   int failedAttempts = 0;
   static const int maxAttempts = 5;
 
+  // Warna tema admin
+  static const Color adminBlue = Color(0xFF203554);
+  static const Color adminBlueBg = Color(0xFFE8EDF4);
+
   @override
+  void dispose() {
+    oldPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+    super.dispose();
+  }
+
   void _goToForgotPassword() {
     final user = FirebaseAuth.instance.currentUser;
-
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => ForgotPasswordScreen(initialEmail: user?.email),
       ),
     );
-  }
-
-  void dispose() {
-    oldPasswordController.dispose();
-    newPasswordController.dispose();
-    confirmPasswordController.dispose();
-    super.dispose();
   }
 
   Future<void> _verifyOldPassword() async {
@@ -52,44 +57,33 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _showMessage('Password awal wajib diisi');
       return;
     }
-
     if (user == null || user.email == null) {
       _showMessage('User belum login');
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: oldPassword,
       );
-
       await user.reauthenticateWithCredential(credential);
 
       if (!mounted) return;
-
       setState(() {
         isOldPasswordVerified = true;
         isLoading = false;
       });
-
       _showMessage('Password awal benar. Silakan masukkan password baru.');
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-
       failedAttempts++;
-
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
 
       if (failedAttempts >= maxAttempts) {
         _showMessage('Percobaan sudah 5 kali. Silakan reset password.');
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
@@ -99,21 +93,15 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
       String message =
           'Password awal salah. Sisa percobaan: ${maxAttempts - failedAttempts}';
-
       if (e.code == 'too-many-requests') {
         message = 'Terlalu banyak percobaan. Coba lagi nanti.';
       } else if (e.code == 'user-disabled') {
         message = 'Akun ini sedang dinonaktifkan.';
       }
-
       _showMessage(message);
     } catch (e) {
       if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-
+      setState(() => isLoading = false);
       _showMessage('Terjadi kesalahan: $e');
     }
   }
@@ -127,47 +115,32 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _showMessage('Password baru dan konfirmasi wajib diisi');
       return;
     }
-
     if (newPassword.length < 6) {
       _showMessage('Password baru minimal 6 karakter');
       return;
     }
-
     if (newPassword != confirmPassword) {
       _showMessage('Konfirmasi password tidak sama');
       return;
     }
-
     if (user == null) {
       _showMessage('User belum login');
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     try {
       await user.updatePassword(newPassword);
-
       if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-
+      setState(() => isLoading = false);
       _showMessage('Password berhasil diganti');
-
       Navigator.pop(context);
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
 
       String message = 'Gagal mengganti password';
-
       if (e.code == 'requires-recent-login') {
         message = 'Sesi login sudah terlalu lama. Silakan verifikasi ulang.';
         setState(() {
@@ -179,15 +152,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       } else if (e.code == 'weak-password') {
         message = 'Password terlalu lemah';
       }
-
       _showMessage(message);
     } catch (e) {
       if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-
+      setState(() => isLoading = false);
       _showMessage('Terjadi kesalahan: $e');
     }
   }
@@ -223,11 +191,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               controller: oldPasswordController,
                               hintText: 'Masukkan password awal',
                               obscureText: obscureOldPassword,
-                              onToggle: () {
-                                setState(() {
-                                  obscureOldPassword = !obscureOldPassword;
-                                });
-                              },
+                              onToggle: () => setState(
+                                () => obscureOldPassword = !obscureOldPassword,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Row(
@@ -253,7 +219,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.orange,
+                                      color: adminBlue,
                                     ),
                                   ),
                                 ),
@@ -264,23 +230,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               controller: newPasswordController,
                               hintText: 'Masukkan password baru',
                               obscureText: obscureNewPassword,
-                              onToggle: () {
-                                setState(() {
-                                  obscureNewPassword = !obscureNewPassword;
-                                });
-                              },
+                              onToggle: () => setState(
+                                () => obscureNewPassword = !obscureNewPassword,
+                              ),
                             ),
                             const SizedBox(height: 14),
                             _passwordField(
                               controller: confirmPasswordController,
                               hintText: 'Konfirmasi password baru',
                               obscureText: obscureConfirmPassword,
-                              onToggle: () {
-                                setState(() {
-                                  obscureConfirmPassword =
-                                      !obscureConfirmPassword;
-                                });
-                              },
+                              onToggle: () => setState(
+                                () => obscureConfirmPassword =
+                                    !obscureConfirmPassword,
+                              ),
                             ),
                           ],
                         ],
@@ -317,14 +279,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFF3ECE8),
+              color: adminBlueBg,
               borderRadius: BorderRadius.circular(24),
             ),
             child: IconButton(
               onPressed: () => Navigator.pop(context),
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.black,
+                color: adminBlue,
                 size: 20,
               ),
             ),
@@ -384,7 +346,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         hintText: hintText,
         hintStyle: const TextStyle(color: Color(0xFF8F8B89), fontSize: 16),
         filled: true,
-        fillColor: const Color(0xFFF8F1EE),
+        fillColor: adminBlueBg,
         suffixIcon: IconButton(
           onPressed: onToggle,
           icon: Icon(
@@ -400,11 +362,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFE4D8D2)),
+          borderSide: const BorderSide(color: Color(0xFFCDD5E0)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.orange),
+          borderSide: const BorderSide(color: adminBlue, width: 2),
         ),
       ),
       style: const TextStyle(fontSize: 16, color: Colors.black),
@@ -428,7 +390,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               ? _changePassword
               : _verifyOldPassword,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.orange,
+            backgroundColor: adminBlue,
             foregroundColor: Colors.white,
             disabledBackgroundColor: Colors.grey.shade300,
             elevation: 0,

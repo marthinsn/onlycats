@@ -13,7 +13,6 @@ class AdminCatsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      bottomNavigationBar: const AdminBottomNav(currentIndex: 0),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
