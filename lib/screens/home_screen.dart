@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../widgets/cat_card.dart';
-import '../widgets/filter_chip_item.dart';
 import 'rescue_screen.dart';
 import 'profile_screen.dart';
 import 'notification_screen.dart';
@@ -87,8 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildSearchBar(),
             const SizedBox(height: 22),
             _buildMenuCards(),
-            const SizedBox(height: 22),
-            _buildFilterSection(),
             const SizedBox(height: 22),
             _buildCatListFromFirestore(),
           ],
@@ -348,21 +345,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildFilterSection() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: const [
-          FilterChipItem(label: 'Semua', selected: true, icon: Icons.pets),
-          SizedBox(width: 12),
-          FilterChipItem(label: 'Adopsi', icon: Icons.home_work_outlined),
-          SizedBox(width: 12),
-          FilterChipItem(label: 'Rescue', icon: Icons.sos),
-        ],
-      ),
     );
   }
 
