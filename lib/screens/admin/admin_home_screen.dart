@@ -5,6 +5,7 @@ import '../../services/admin_service.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
 import 'admin_cats_screen.dart';
+import 'admin_adoptions_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -201,7 +202,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               subtitle: 'Kelola form adopsi',
               color: AppColors.orange,
               bg: const Color(0xFFFFF0E8),
-              onTap: () {}, // TODO: admin_adoptions_screen
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminAdoptionsScreen()),
+              ),
             ),
           ],
         ),

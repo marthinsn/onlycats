@@ -5,6 +5,10 @@ import '../../services/user_service.dart';
 import '../../data/profile_controller.dart';
 import 'admin_bottom_nav.dart';
 import 'admin_dashboard_screen.dart';
+import 'admin_edit_profile_screen.dart';
+import 'admin_users_screen.dart';
+import 'admin_notification_screen.dart';
+import 'admin_change_password_screen.dart';
 
 class AdminProfileScreen extends StatefulWidget {
   const AdminProfileScreen({super.key});
@@ -28,10 +32,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final data = snap.data() as Map<String, dynamic>;
     profileController.updateProfile(
       profileController.profile.copyWith(
-        fullName: data['name'] ?? profileController.profile.fullName,
-        username: data['username'] ?? profileController.profile.username,
-        email: data['email'] ?? profileController.profile.email,
-        bio: data['bio'] ?? profileController.profile.bio,
+        fullName: data['name'] ?? '',
+        username: data['username'] ?? '',
+        email: data['email'] ?? user.email ?? '',
+        bio: data['bio'] ?? '',
+        birthDate: data['birthDate'] ?? '',
+        phone: data['phone'] ?? '',
+        city: data['city'] ?? '',
+        instagram: data['instagram'] ?? '',
+        twitter: data['twitter'] ?? '',
+        facebook: data['facebook'] ?? '',
       ),
     );
   }
@@ -94,7 +104,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   _buildDashboardBanner(context),
                   const SizedBox(height: 24),
                   const Text(
-                    'PENGATURAN ADMIN',
+                    'MANAJEMEN',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
@@ -109,19 +119,64 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         icon: Icons.manage_accounts_rounded,
                         label: 'Manajemen Akun',
                         subtitle: 'Kelola data pengguna',
-                        onTap: () {}, // TODO
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminUsersScreen(),
+                          ),
+                        ),
+                        isLast: true,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'PENGATURAN ADMIN',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.2,
+                      color: Color(0xFF9C9CAD),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _buildSectionCard(
+                    children: [
+                      _AdminMenuTile(
+                        icon: Icons.person_outline_rounded,
+                        label: 'Edit Profil',
+                        subtitle: 'Ubah nama, username, bio',
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const AdminEditProfileScreen(),
+                            ),
+                          );
+                          await _loadUser();
+                        },
                       ),
                       _AdminMenuTile(
-                        icon: Icons.pets_rounded,
-                        label: 'Data Kucing',
-                        subtitle: 'Tambah & edit kucing',
-                        onTap: () {}, // TODO
+                        icon: Icons.lock_outline_rounded,
+                        label: 'Ganti Password',
+                        subtitle: 'Ubah kata sandi akun',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminChangePasswordScreen(),
+                          ),
+                        ),
                       ),
                       _AdminMenuTile(
-                        icon: Icons.favorite_rounded,
-                        label: 'Kelola Adopsi',
-                        subtitle: 'Lihat semua form adopsi',
-                        onTap: () {}, // TODO
+                        icon: Icons.notifications_none_rounded,
+                        label: 'Notifikasi',
+                        subtitle: 'Pengaturan notifikasi',
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AdminNotificationScreen(),
+                          ),
+                        ),
                         isLast: true,
                       ),
                     ],
