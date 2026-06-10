@@ -40,4 +40,10 @@ class NotificationService {
 
     await batch.commit();
   }
+
+  Future<void> markAsRead(String notificationId) async {
+    await _db.collection('notifications').doc(notificationId).update({
+      'isRead': true,
+    });
+  }
 }

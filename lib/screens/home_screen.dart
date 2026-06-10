@@ -13,6 +13,7 @@ import '../services/user_service.dart';
 import 'my_adoptions_screen.dart';
 import 'dart:io';
 import '../data/profile_controller.dart';
+import 'chat_admin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChatAdminScreen()),
+          );
+        },
+        backgroundColor: AppColors.orange,
+        child: const Icon(Icons.chat_rounded, color: Colors.white),
+      ),
       bottomNavigationBar: Container(
         height: 84,
         decoration: const BoxDecoration(
@@ -218,57 +229,79 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const NotificationScreen(),
-                      ),
-                    );
-                  },
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 14,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none_rounded,
-                          color: AppColors.primaryText,
-                          size: 28,
-                        ),
-                      ),
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Colors.redAccent,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildNotificationButton(),
               ],
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildNotificationButton() {
+    final user = currentUser;
+
+    Stream<int>? unreadStream;
+    if (user != null) {
+      unreadStream = FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: user.uid)
+          .where('isRead', isEqualTo: false)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.length);
+    }
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NotificationScreen()),
+        );
+      },
+      child: StreamBuilder<int>(
+        stream: unreadStream,
+        builder: (context, snapshot) {
+          final unreadCount = snapshot.data ?? 0;
+
+          return Stack(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.notifications_none_rounded,
+                  color: AppColors.primaryText,
+                  size: 28,
+                ),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
     );
   }
 

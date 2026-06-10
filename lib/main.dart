@@ -12,6 +12,7 @@ import 'screens/profile_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
 import 'screens/admin/admin_rescue_screen.dart';
 import 'screens/admin/admin_profile_screen.dart';
+import 'screens/admin/admin_chat_list_screen.dart';
 
 import 'services/local_notification_service.dart';
 
@@ -47,6 +48,7 @@ class OnlyCatsApp extends StatelessWidget {
         '/admin/home': (_) => const AdminHomeScreen(),
         '/admin/rescue': (_) => const AdminRescueScreen(),
         '/admin/profile': (_) => const AdminProfileScreen(),
+        '/admin/chat': (_) => const AdminChatListScreen(),
       },
     );
   }

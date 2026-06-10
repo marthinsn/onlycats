@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../theme/app_colors.dart';
 import '../../services/admin_service.dart';
 import 'admin_home_screen.dart';
+import 'admin_chat_list_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -48,6 +50,52 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
+      floatingActionButton: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('chat_rooms')
+            .where('unreadByAdmin', isEqualTo: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AdminChatListScreen()),
+                  );
+                },
+                backgroundColor: const Color(0xFF203554),
+                child: const Icon(Icons.chat_rounded, color: Colors.white),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: AppColors.danger,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.orange,

@@ -192,6 +192,7 @@ class NotificationScreen extends StatelessWidget {
                       final type = data['type'] ?? 'info';
                       final isRead = data['isRead'] == true;
                       final createdAt = data['createdAt'];
+                      final id = doc.id;
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
@@ -202,6 +203,16 @@ class NotificationScreen extends StatelessWidget {
                           timeText: _formatTime(createdAt),
                           chipLabel: _getChipLabel(type),
                           showDot: !isRead,
+                          onTap: isRead
+                              ? null
+                              : () async {
+                                  await NotificationService().markAsRead(id);
+                                },
+                          onMarkAsRead: isRead
+                              ? null
+                              : () async {
+                                  await NotificationService().markAsRead(id);
+                                },
                         ),
                       );
                     }),
@@ -414,6 +425,8 @@ class NotificationItemCard extends StatelessWidget {
   final String timeText;
   final String chipLabel;
   final bool showDot;
+  final VoidCallback? onTap;
+  final VoidCallback? onMarkAsRead;
 
   const NotificationItemCard({
     super.key,
@@ -423,100 +436,131 @@ class NotificationItemCard extends StatelessWidget {
     required this.timeText,
     required this.chipLabel,
     this.showDot = true,
+    this.onTap,
+    this.onMarkAsRead,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFAF8),
-        border: Border.all(color: const Color(0xFFFFD0BE)),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF6F0EC),
-              borderRadius: BorderRadius.circular(18),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFAF8),
+          border: Border.all(color: const Color(0xFFFFD0BE)),
+          borderRadius: BorderRadius.circular(28),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF6F0EC),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(icon, color: AppColors.orange, size: 30),
             ),
-            child: Icon(icon, color: AppColors.orange, size: 30),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryText,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primaryText,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      timeText,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFA2A0B0),
-                      ),
-                    ),
-                    if (showDot) ...[
                       const SizedBox(width: 8),
-                      Container(
-                        width: 16,
-                        height: 16,
-                        decoration: const BoxDecoration(
-                          color: AppColors.orange,
-                          shape: BoxShape.circle,
+                      Text(
+                        timeText,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFFA2A0B0),
                         ),
                       ),
+                      if (showDot) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: const BoxDecoration(
+                            color: AppColors.orange,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    height: 1.55,
-                    color: AppColors.secondaryText,
                   ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: const Color(0xFFFFD0BE)),
-                    borderRadius: BorderRadius.circular(22),
-                  ),
-                  child: Text(
-                    chipLabel,
+                  const SizedBox(height: 10),
+                  Text(
+                    message,
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.orange,
+                      fontSize: 15,
+                      height: 1.55,
+                      color: AppColors.secondaryText,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFFFD0BE)),
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+                        child: Text(
+                          chipLabel,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.orange,
+                          ),
+                        ),
+                      ),
+                      if (onMarkAsRead != null) ...[
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: onMarkAsRead,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.orange,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Tandai dibaca',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

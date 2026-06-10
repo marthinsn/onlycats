@@ -101,19 +101,6 @@ class CatDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 20,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _CarouselDot(active: true),
-                          _CarouselDot(active: false),
-                          _CarouselDot(active: false),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -222,21 +209,6 @@ class CatDetailScreen extends StatelessWidget {
             bottom: 18,
             child: Row(
               children: [
-                Container(
-                  width: 72,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: const Color(0xFFFFD8C7)),
-                  ),
-                  child: const Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    color: AppColors.orange,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 14),
                 Expanded(
                   child: SizedBox(
                     height: 60,
@@ -708,25 +680,6 @@ class CatDetailScreen extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(icon, color: AppColors.primaryText, size: 24),
-      ),
-    );
-  }
-}
-
-class _CarouselDot extends StatelessWidget {
-  final bool active;
-
-  const _CarouselDot({required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 3),
-      width: active ? 28 : 8,
-      height: 8,
-      decoration: BoxDecoration(
-        color: active ? Colors.white : Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(10),
       ),
     );
   }

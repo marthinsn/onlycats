@@ -7,6 +7,7 @@ import 'admin_dashboard_screen.dart';
 import 'admin_cats_screen.dart';
 import 'admin_rescue_detail_screen.dart';
 import 'admin_adoptions_screen.dart';
+import 'admin_chat_list_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
   const AdminHomeScreen({super.key});
@@ -30,6 +31,52 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       bottomNavigationBar: const AdminBottomNav(currentIndex: 0),
+      floatingActionButton: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('chat_rooms')
+            .where('unreadByAdmin', isEqualTo: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          final unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const AdminChatListScreen()),
+                  );
+                },
+                backgroundColor: const Color(0xFF203554),
+                child: const Icon(Icons.chat_rounded, color: Colors.white),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: AppColors.danger,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.orange,
@@ -267,6 +314,17 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AdminAdoptionsScreen()),
+              ),
+            ),
+            _MenuCard(
+              icon: Icons.chat_rounded,
+              label: 'Chat User',
+              subtitle: 'Pesan dari user',
+              color: AppColors.purple,
+              bg: const Color(0xFFEFE8FA),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminChatListScreen()),
               ),
             ),
           ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import 'chat_admin_screen.dart';
 
 class FaqScreen extends StatefulWidget {
   const FaqScreen({super.key});
@@ -252,7 +253,12 @@ class _FaqScreenState extends State<FaqScreen> {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const ChatAdminScreen()),
+                            );
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.orange,
                             foregroundColor: Colors.white,
