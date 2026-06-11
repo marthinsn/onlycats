@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'forgot_password_screen.dart';
+import '../widgets/cat_loading.dart';
 import 'register_screen.dart';
 import '../services/admin_service.dart';
 import '../services/notification_listener_service.dart';
@@ -113,7 +114,9 @@ class _LoginScreenState extends State<LoginScreen> {
     final loggedInEmail = user.email?.toLowerCase() ?? '';
     final isAdmin = isAdminEmail(loggedInEmail);
 
-    NotificationListenerService.startListening(user.uid);
+    // Jika admin, dengarkan notifikasi khusus 'admin'
+    // Jika user biasa, dengarkan notifikasi berdasarkan uid mereka
+    NotificationListenerService.startListening(isAdmin ? 'admin' : user.uid);
 
     if (isAdmin) {
       Navigator.pushReplacementNamed(context, '/admin/home');
@@ -225,14 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   onPressed: _isLoading ? null : _login,
                   child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
+                      ? const CatLoading(size: 30)
                       : const Text(
                           'Masuk',
                           style: TextStyle(fontSize: 18, color: Colors.white),

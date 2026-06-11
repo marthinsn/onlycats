@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/cat_loading.dart';
 import 'admin_chat_detail_screen.dart';
 
 class AdminChatListScreen extends StatelessWidget {
@@ -38,7 +39,7 @@ class AdminChatListScreen extends StatelessWidget {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CatLoading());
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -53,18 +54,32 @@ class AdminChatListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = rooms[index].data() as Map<String, dynamic>;
               final userId = rooms[index].id;
-              final userName = data['userName'] ?? 'User';
               final lastMessage = data['lastMessage'] ?? '';
               final timestamp = data['timestamp'] as Timestamp?;
               final unread = data['unreadByAdmin'] ?? false;
 
-              return _buildChatTile(
-                context,
-                userId: userId,
-                userName: userName,
-                lastMessage: lastMessage,
-                timestamp: timestamp?.toDate(),
-                unread: unread,
+              return StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .snapshots(),
+                builder: (context, userSnapshot) {
+                  String displayUserName = data['userName'] ?? 'User';
+                  if (userSnapshot.hasData && userSnapshot.data!.exists) {
+                    final userData =
+                        userSnapshot.data!.data() as Map<String, dynamic>;
+                    displayUserName = userData['username'] ?? displayUserName;
+                  }
+
+                  return _buildChatTile(
+                    context,
+                    userId: userId,
+                    userName: displayUserName,
+                    lastMessage: lastMessage,
+                    timestamp: timestamp?.toDate(),
+                    unread: unread,
+                  );
+                },
               );
             },
           );

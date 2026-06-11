@@ -65,12 +65,14 @@ class CatCard extends StatelessWidget {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.green,
+                      color: cat.status == 'diadopsi'
+                          ? Colors.grey
+                          : AppColors.green,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      'Tersedia',
-                      style: TextStyle(
+                    child: Text(
+                      cat.status == 'diadopsi' ? 'Sudah Diadopsi' : 'Tersedia',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                         fontSize: 14,

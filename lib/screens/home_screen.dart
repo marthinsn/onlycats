@@ -9,6 +9,7 @@ import 'cat_detail_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/cat_model.dart';
 import '../widgets/category_card.dart';
+import '../widgets/cat_loading.dart';
 import '../services/user_service.dart';
 import 'my_adoptions_screen.dart';
 import 'dart:io';
@@ -38,69 +39,116 @@ class _HomeScreenState extends State<HomeScreen> {
             MaterialPageRoute(builder: (_) => const ChatAdminScreen()),
           );
         },
+        elevation: 4,
+        highlightElevation: 8,
         backgroundColor: AppColors.orange,
-        child: const Icon(Icons.chat_rounded, color: Colors.white),
+        child: const Icon(Icons.chat_bubble_rounded, color: Colors.white),
       ),
-      bottomNavigationBar: Container(
-        height: 84,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE9E4E1))),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: currentBottomNav,
-          onTap: (index) {
-            if (index == currentBottomNav) return;
-
-            if (index == 0) {
-              return;
-            } else if (index == 1) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const RescueScreen()),
-              );
-            } else if (index == 2) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            }
-          },
-          backgroundColor: Colors.white,
-          elevation: 0,
-          selectedItemColor: AppColors.orange,
-          unselectedItemColor: AppColors.iconGrey,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home_filled),
-              label: 'Beranda',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.change_history_outlined),
-              label: 'Rescue',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              label: 'Profil',
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomNavigation(context),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          children: [
-            _buildTopSection(),
-            const SizedBox(height: 24),
-            _buildSearchBar(),
-            const SizedBox(height: 22),
-            _buildMenuCards(),
-            const SizedBox(height: 22),
-            _buildCatListFromFirestore(),
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+              sliver: SliverToBoxAdapter(
+                child: _buildTopSection(),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+              sliver: SliverToBoxAdapter(
+                child: _buildSearchBar(),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+              sliver: SliverToBoxAdapter(
+                child: _buildMenuCards(),
+              ),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+              sliver: SliverToBoxAdapter(
+                child: _buildCatListFromFirestore(),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNavigation(BuildContext context) {
+    return Container(
+      height: 84,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
+        currentIndex: currentBottomNav,
+        onTap: (index) {
+          if (index == currentBottomNav) return;
+
+          if (index == 0) {
+            return;
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const RescueScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            );
+          }
+        },
+        backgroundColor: Colors.white,
+        elevation: 0,
+        selectedItemColor: AppColors.orange,
+        unselectedItemColor: AppColors.iconGrey,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.home_outlined, size: 26),
+            ),
+            activeIcon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.home_filled, size: 26),
+            ),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.warning_amber_rounded, size: 26),
+            ),
+            label: 'Rescue',
+          ),
+          BottomNavigationBarItem(
+            icon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.person_outline, size: 26),
+            ),
+            activeIcon: Padding(
+              padding: EdgeInsets.only(bottom: 4),
+              child: Icon(Icons.person, size: 26),
+            ),
+            label: 'Profil',
+          ),
+        ],
       ),
     );
   }
@@ -391,9 +439,7 @@ class _HomeScreenState extends State<HomeScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.only(top: 24),
-            child: Center(
-              child: CircularProgressIndicator(color: AppColors.orange),
-            ),
+            child: CatLoading(),
           );
         }
 

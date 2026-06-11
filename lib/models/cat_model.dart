@@ -10,6 +10,7 @@ class CatModel {
   final bool sterilized;
   final bool available;
   final bool favorite;
+  final String status;
   final String color;
   final String weight;
   final String size;
@@ -33,6 +34,7 @@ class CatModel {
     required this.sterilized,
     required this.available,
     required this.favorite,
+    this.status = 'tersedia',
     required this.color,
     required this.weight,
     required this.size,
@@ -58,6 +60,7 @@ class CatModel {
       sterilized: data['sterilized'] ?? false,
       available: data['available'] ?? true,
       favorite: data['favorite'] ?? false,
+      status: data['status'] ?? 'tersedia',
       color: data['color'] ?? '',
       weight: data['weight'] ?? '',
       size: data['size'] ?? '',

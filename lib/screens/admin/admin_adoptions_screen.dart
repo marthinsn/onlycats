@@ -14,13 +14,63 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
   String _filterStatus = 'Semua';
   final List<String> _statuses = ['Semua', 'Menunggu', 'Disetujui', 'Ditolak'];
 
-  Future<void> _updateStatus(String docId, String newStatus) async {
-    await FirebaseFirestore.instance.collection('adoptions').doc(docId).update({
+  Future<void> _updateStatus(
+      String docId, String newStatus, String? catId, String oldStatus, Map<String, dynamic> data) async {
+    if (newStatus == oldStatus) return;
+
+    final batch = FirebaseFirestore.instance.batch();
+
+    // Update adoption
+    final adoptionRef =
+        FirebaseFirestore.instance.collection('adoptions').doc(docId);
+    batch.update(adoptionRef, {
       'status': newStatus,
+      'updatedAt': FieldValue.serverTimestamp(),
     });
+
+    // Update cat if catId exists
+    if (catId != null && catId.isNotEmpty) {
+      final catRef = FirebaseFirestore.instance.collection('cats').doc(catId);
+
+      if (newStatus == 'approved') {
+        batch.update(catRef, {'status': 'diadopsi'});
+      } else if (oldStatus == 'approved' && newStatus != 'approved') {
+        batch.update(catRef, {'status': 'tersedia'});
+      }
+    }
+
+    await batch.commit();
+
+    // Send notification
+    final userId = data['userId']?.toString() ?? '';
+    final catName = data['catName'] ?? data['namaKucing'] ?? 'kucing';
+    final shelterName = data['shelterName'] ?? '-';
+
+    if (userId.isNotEmpty) {
+      String message;
+      if (newStatus == 'approved') {
+        message = 'Ajuan adopsi kamu untuk $catName disetujui. Silahkan temui $catName di $shelterName.';
+      } else if (newStatus == 'rejected') {
+        message = 'Ajuan adopsi kamu untuk $catName belum dapat disetujui.';
+      } else {
+        message = 'Ajuan adopsi kamu untuk $catName sedang diproses admin.';
+      }
+
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'userId': userId,
+        'title': 'Status adopsi diperbarui',
+        'message': message,
+        'type': 'adoption_status',
+        'adoptionId': docId,
+        'catId': catId,
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
   }
 
-  void _showStatusDialog(String docId, String currentStatus) {
+  void _showStatusDialog(
+      String docId, String currentStatus, String? catId, Map<String, dynamic> data) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -52,21 +102,19 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ...['Menunggu', 'Disetujui', 'Ditolak'].map((status) {
+            ...['Menunggu', 'Disetujui', 'Ditolak'].map((statusName) {
               final mappedCurrentStatus = _mapStatus(currentStatus);
-              final isSelected = status == mappedCurrentStatus;
+              final isSelected = statusName == mappedCurrentStatus;
               return GestureDetector(
                 onTap: () async {
                   Navigator.pop(context);
-                  // Simpan dalam format yang diharapkan detail screen/DB jika perlu
-                  // Namun untuk konsistensi, kita gunakan mapping balik atau 
-                  // simpan apa adanya. Detail screen menggunakan 'approved', 'rejected', 'on hold'.
-                  String dbStatus = status;
-                  if (status == 'Menunggu') dbStatus = 'on hold';
-                  if (status == 'Disetujui') dbStatus = 'approved';
-                  if (status == 'Ditolak') dbStatus = 'rejected';
-                  
-                  await _updateStatus(docId, dbStatus);
+                  String dbStatus = statusName;
+                  if (statusName == 'Menunggu') dbStatus = 'on hold';
+                  if (statusName == 'Disetujui') dbStatus = 'approved';
+                  if (statusName == 'Ditolak') dbStatus = 'rejected';
+
+                  await _updateStatus(
+                      docId, dbStatus, catId, currentStatus, data);
                 },
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 10),
@@ -86,13 +134,13 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _statusIcon(status),
-                        color: isSelected ? Colors.white : _statusColor(status),
+                        _statusIcon(statusName),
+                        color: isSelected ? Colors.white : _statusColor(statusName),
                         size: 20,
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        status,
+                        statusName,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
@@ -301,6 +349,7 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
     final catName = data['catName'] ?? data['namaKucing'] ?? '-';
     final city = data['city'] ?? data['kota'] ?? '-';
     final phone = data['phone'] ?? data['telepon'] ?? '-';
+    final catId = data['catId']?.toString();
 
     return GestureDetector(
       onTap: () {
@@ -371,7 +420,9 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => _showStatusDialog(docId, rawStatus),
+                  onTap: (rawStatus == 'approved' || rawStatus == 'rejected')
+                      ? null
+                      : () => _showStatusDialog(docId, rawStatus, catId, data),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -392,12 +443,14 @@ class _AdminAdoptionsScreenState extends State<AdminAdoptionsScreen> {
                             color: _statusColor(status),
                           ),
                         ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.expand_more_rounded,
-                          size: 16,
-                          color: _statusColor(status),
-                        ),
+                        if (rawStatus != 'approved' && rawStatus != 'rejected') ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.expand_more_rounded,
+                            size: 16,
+                            color: _statusColor(status),
+                          ),
+                        ],
                       ],
                     ),
                   ),

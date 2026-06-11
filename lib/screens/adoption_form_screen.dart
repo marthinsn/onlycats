@@ -108,6 +108,16 @@ class _AdoptionFormScreenState extends State<AdoptionFormScreen> {
         catId: widget.cat.id,
       );
 
+      // NOTIF UNTUK ADMIN
+      await NotificationService().createNotification(
+        userId: 'admin',
+        title: 'Ajuan Adopsi Baru 🐾',
+        message: 'Ada ajuan adopsi baru untuk ${widget.cat.name} dari ${fullNameController.text.trim()}.',
+        type: 'adoption_submit_admin',
+        adoptionId: adoptionRef.id,
+        catId: widget.cat.id,
+      );
+
       if (!mounted) return;
 
       _showMessage('Form adopsi berhasil dikirim');

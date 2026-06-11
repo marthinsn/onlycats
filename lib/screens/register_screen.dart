@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 
 import 'login_screen.dart';
+import '../widgets/cat_loading.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -281,14 +282,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                   onPressed: _isLoading ? null : _register,
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
+                      ? const CatLoading(size: 30)
                       : const Text(
                           'Daftar Sekarang',
                           style: TextStyle(fontSize: 18, color: Colors.white),

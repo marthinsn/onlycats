@@ -1,17 +1,54 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/cat_model.dart';
 import '../theme/app_colors.dart';
 import 'adoption_form_screen.dart';
 import '../services/favorite_service.dart';
 
-class CatDetailScreen extends StatelessWidget {
+class CatDetailScreen extends StatefulWidget {
   final CatModel cat;
 
   const CatDetailScreen({super.key, required this.cat});
 
-  Widget _buildCatImage() {
+  @override
+  State<CatDetailScreen> createState() => _CatDetailScreenState();
+}
+
+class _CatDetailScreenState extends State<CatDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _scaleAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.elasticOut,
+    );
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildCatImage(CatModel cat) {
     final image = cat.image.trim();
 
     if (image.isEmpty) {
@@ -47,56 +84,248 @@ class CatDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Stack(
-                  children: [
-                    SizedBox(
-                      height: 430,
-                      width: double.infinity,
-                      child: _buildCatImage(),
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('cats')
+          .doc(widget.cat.id)
+          .snapshots(),
+      builder: (context, snapshot) {
+        CatModel currentCat = widget.cat;
+
+        if (snapshot.hasData && snapshot.data!.exists) {
+          currentCat = CatModel.fromMap(
+            snapshot.data!.id,
+            snapshot.data!.data() as Map<String, dynamic>,
+          );
+        }
+
+        final bool isAdopted = currentCat.status == 'diadopsi';
+
+        if (isAdopted) {
+          _animationController.forward();
+        } else {
+          _animationController.reverse();
+        }
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Stack(
+            children: [
+              CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: Stack(
+                      children: [
+                        SizedBox(
+                          height: 430,
+                          width: double.infinity,
+                          child: _buildCatImage(currentCat),
+                        ),
+                        Positioned(
+                          left: 20,
+                          right: 20,
+                          top: 50,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _circleButton(
+                                icon: Icons.arrow_back_ios_new_rounded,
+                                onTap: () => Navigator.pop(context),
+                              ),
+                              _circleButton(
+                                icon: Icons.share_outlined,
+                                onTap: () {
+                                  Share.share(
+                                    'Ayo adopsi ${currentCat.name}! 🐱\n\n'
+                                    'Ras: ${currentCat.breed}\n'
+                                    'Usia: ${currentCat.age}\n'
+                                    'Lokasi: ${currentCat.location}\n\n'
+                                    'Lihat detailnya di aplikasi OnlyCats!',
+                                    subject: 'Adopsi ${currentCat.name} di OnlyCats',
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        Positioned(
+                          left: 24,
+                          bottom: 22,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isAdopted ? Colors.grey : AppColors.green,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              isAdopted ? 'Sudah Diadopsi' : 'Tersedia',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    Positioned(
-                      left: 20,
-                      right: 20,
-                      top: 50,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _circleButton(
-                            icon: Icons.arrow_back_ios_new_rounded,
-                            onTap: () => Navigator.pop(context),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Transform.translate(
+                      offset: const Offset(0, -10),
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(28),
                           ),
-                          _circleButton(
-                            icon: Icons.share_outlined,
-                            onTap: () {},
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildTopInfoCard(context, currentCat),
+                              const SizedBox(height: 22),
+                              _sectionTitle('INFORMASI KUCING'),
+                              const SizedBox(height: 12),
+                              _buildInfoGrid(currentCat),
+                              const SizedBox(height: 22),
+                              _sectionTitle('STATUS KESEHATAN'),
+                              const SizedBox(height: 12),
+                              _buildHealthStatus(currentCat),
+                              const SizedBox(height: 22),
+                              _sectionTitle(
+                                'TENTANG ${currentCat.name.toUpperCase()}',
+                              ),
+                              const SizedBox(height: 12),
+                              _buildDescriptionCard(currentCat),
+                              const SizedBox(height: 22),
+                              _sectionTitle('KEPRIBADIAN'),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 10,
+                                runSpacing: 10,
+                                children: currentCat.personalities.isNotEmpty
+                                    ? currentCat.personalities
+                                          .map((item) => _personalityChip(item))
+                                          .toList()
+                                    : [_personalityChip('Belum ada data')],
+                              ),
+                              const SizedBox(height: 22),
+                              _sectionTitle(
+                                'TEMUI ${currentCat.name.toUpperCase()} DI',
+                              ),
+                              const SizedBox(height: 12),
+                              _buildShelterCard(currentCat),
+                              if (currentCat.latitude != null &&
+                                  currentCat.longitude != null) ...[
+                                const SizedBox(height: 22),
+                                _sectionTitle('LOKASI PENJEMPUTAN'),
+                                const SizedBox(height: 12),
+                                Container(
+                                  height: 200,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    border: Border.all(
+                                      color: const Color(0xFFE8DDD7),
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: FlutterMap(
+                                      options: MapOptions(
+                                        initialCenter: LatLng(
+                                          currentCat.latitude!,
+                                          currentCat.longitude!,
+                                        ),
+                                        initialZoom: 15,
+                                      ),
+                                      children: [
+                                        TileLayer(
+                                          urlTemplate:
+                                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                          userAgentPackageName:
+                                              'com.example.onlycats',
+                                        ),
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(
+                                                currentCat.latitude!,
+                                                currentCat.longitude!,
+                                              ),
+                                              width: 45,
+                                              height: 45,
+                                              child: const Icon(
+                                                Icons.location_on,
+                                                color: AppColors.orange,
+                                                size: 40,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                    Positioned(
-                      left: 24,
-                      bottom: 22,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.green,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Tersedia',
-                          style: TextStyle(
+                  ),
+                ],
+              ),
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 18,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 60,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            if (isAdopted) {
+                              _showAdoptedDialog(context, currentCat);
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    AdoptionFormScreen(cat: currentCat),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            isAdopted
+                                ? Icons.verified_rounded
+                                : Icons.favorite,
                             color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                          ),
+                          label: Text(
+                            isAdopted ? 'Sudah Diadopsi' : 'Ajukan Adopsi',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                isAdopted ? Colors.grey[400] : AppColors.orange,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
                           ),
                         ),
                       ),
@@ -104,151 +333,167 @@ class CatDetailScreen extends StatelessWidget {
                   ],
                 ),
               ),
-              SliverToBoxAdapter(
-                child: Transform.translate(
-                  offset: const Offset(0, -10),
+              if (isAdopted)
+                FadeTransition(
+                  opacity: _opacityAnimation,
                   child: Container(
-                    decoration: const BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(28),
-                      ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildTopInfoCard(context),
-                          const SizedBox(height: 22),
-                          _sectionTitle('INFORMASI KUCING'),
-                          const SizedBox(height: 12),
-                          _buildInfoGrid(),
-                          const SizedBox(height: 22),
-                          _sectionTitle('STATUS KESEHATAN'),
-                          const SizedBox(height: 12),
-                          _buildHealthStatus(),
-                          const SizedBox(height: 22),
-                          _sectionTitle('TENTANG ${cat.name.toUpperCase()}'),
-                          const SizedBox(height: 12),
-                          _buildDescriptionCard(),
-                          const SizedBox(height: 22),
-                          _sectionTitle('KEPRIBADIAN'),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: cat.personalities.isNotEmpty
-                                ? cat.personalities
-                                      .map((item) => _personalityChip(item))
-                                      .toList()
-                                : [_personalityChip('Belum ada data')],
-                          ),
-                          const SizedBox(height: 22),
-                          _sectionTitle('TEMUI ${cat.name.toUpperCase()} DI'),
-                          const SizedBox(height: 12),
-                          _buildShelterCard(),
-                          if (cat.latitude != null && cat.longitude != null) ...[
-                            const SizedBox(height: 22),
-                            _sectionTitle('LOKASI PENJEMPUTAN'),
-                            const SizedBox(height: 12),
-                            Container(
-                              height: 200,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: const Color(0xFFE8DDD7)),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(24),
-                                child: FlutterMap(
-                                  options: MapOptions(
-                                    initialCenter:
-                                        LatLng(cat.latitude!, cat.longitude!),
-                                    initialZoom: 15,
-                                  ),
-                                  children: [
-                                    TileLayer(
-                                      urlTemplate:
-                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName: 'com.example.onlycats',
-                                    ),
-                                    MarkerLayer(
-                                      markers: [
-                                        Marker(
-                                          point: LatLng(
-                                            cat.latitude!,
-                                            cat.longitude!,
-                                          ),
-                                          width: 45,
-                                          height: 45,
-                                          child: const Icon(
-                                            Icons.location_on,
-                                            color: AppColors.orange,
-                                            size: 40,
-                                          ),
-                                        ),
-                                      ],
+                    color: Colors.white.withOpacity(0.85),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFFF0E8),
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.orange.withOpacity(0.2),
+                                      blurRadius: 20,
+                                      spreadRadius: 5,
                                     ),
                                   ],
                                 ),
+                                child: const Text(
+                                  '🐱❤️',
+                                  style: TextStyle(fontSize: 64),
+                                ),
                               ),
-                            ),
-                          ],
-                        ],
+                              const SizedBox(height: 32),
+                              Text(
+                                '${currentCat.name} Sudah Punya Rumah Baru!',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  color: AppColors.primaryText,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Yey! Pahlawan lain sudah menjemput ${currentCat.name}. Jangan berkecil hati ya, masih banyak teman-teman ${currentCat.name} yang menunggumu! ✨',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  height: 1.6,
+                                  color: AppColors.secondaryText,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.orange,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    elevation: 8,
+                                    shadowColor:
+                                        AppColors.orange.withOpacity(0.4),
+                                  ),
+                                  child: const Text(
+                                    'Cari Kucing Lainnya',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
             ],
           ),
-          Positioned(
-            left: 20,
-            right: 20,
-            bottom: 18,
-            child: Row(
-              children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 60,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => AdoptionFormScreen(cat: cat),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.favorite, color: Colors.white),
-                      label: const Text(
-                        'Ajukan Adopsi',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.orange,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        );
+      },
+    );
+  }
+
+  void _showAdoptedDialog(BuildContext context, CatModel cat) {
+    // This dialog is now redundant but kept for safety if animation is missed
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF0E8),
+                shape: BoxShape.circle,
+              ),
+              child: const Text(
+                '🥳',
+                style: TextStyle(fontSize: 48),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              '${cat.name} Sudah Punya Rumah!',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: AppColors.primaryText,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Yey! Saat ini ${cat.name} sudah resmi diadopsi dan sedang bahagia bersama keluarga barunya. \n\nCoba lihat teman-teman ${cat.name} lainnya yang masih menunggu pahlawan sepertimu ya! 🐱✨',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.5,
+                color: AppColors.secondaryText,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.orange,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Cari Kucing Lain',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTopInfoCard(BuildContext context) {
+  Widget _buildTopInfoCard(BuildContext context, CatModel cat) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -304,6 +549,7 @@ class CatDetailScreen extends StatelessWidget {
                       try {
                         await FavoriteService().toggleFavorite(cat, isFav);
 
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
@@ -315,6 +561,7 @@ class CatDetailScreen extends StatelessWidget {
                           ),
                         );
                       } catch (e) {
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('Gagal favorit: $e')),
                         );
@@ -393,7 +640,7 @@ class CatDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoGrid() {
+  Widget _buildInfoGrid(CatModel cat) {
     return Column(
       children: [
         Row(
@@ -428,7 +675,7 @@ class CatDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHealthStatus() {
+  Widget _buildHealthStatus(CatModel cat) {
     return Row(
       children: [
         Expanded(
@@ -461,7 +708,7 @@ class CatDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(CatModel cat) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -481,7 +728,7 @@ class CatDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildShelterCard() {
+  Widget _buildShelterCard(CatModel cat) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),

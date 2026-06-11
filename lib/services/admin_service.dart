@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 
 // Email dengan domain ini otomatis dianggap sebagai admin.
 // Contoh: admin@admin.com, dhona@admin.com, username@admin.com
@@ -122,6 +123,44 @@ class AdminService {
         createdAt: _parseCreatedAt(data['createdAt']),
       );
     }).toList();
+  }
+
+  /// Update kehadiran admin
+  Future<void> updatePresence(String adminId) async {
+    await _db.collection('admin_status').doc(adminId).set({
+      'lastActive': FieldValue.serverTimestamp(),
+      'isOnline': true,
+    }, SetOptions(merge: true));
+  }
+
+  /// Memantau status online admin (apakah ada admin yang aktif dalam 10 menit terakhir)
+  Stream<bool> streamAdminStatus() {
+    return _db.collection('admin_status').snapshots().map((snapshot) {
+      if (snapshot.docs.isEmpty) {
+        debugPrint('Admin status collection is empty');
+        return false;
+      }
+
+      final now = DateTime.now();
+      bool anyAdminOnline = false;
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final lastActive = data['lastActive'];
+        if (lastActive is Timestamp) {
+          final lastActiveDate = lastActive.toDate();
+          final diff = now.difference(lastActiveDate).abs();
+          
+          debugPrint('Checking admin ${doc.id}: Last active at $lastActiveDate, current time $now, diff: ${diff.inMinutes} mins');
+          
+          if (diff.inMinutes < 10) {
+            anyAdminOnline = true;
+          }
+        }
+      }
+
+      return anyAdminOnline;
+    });
   }
 
   DateTime _parseCreatedAt(dynamic value) {

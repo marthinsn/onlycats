@@ -122,10 +122,10 @@
       "languageVersion": "3.7"
     },
     {
-      "name": "ffi_leak_tracker",
-      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/ffi_leak_tracker-0.1.2",
+      "name": "file",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/file-7.0.1",
       "packageUri": "lib/",
-      "languageVersion": "3.10"
+      "languageVersion": "3.0"
     },
     {
       "name": "file_selector_linux",
@@ -321,7 +321,7 @@
     },
     {
       "name": "geolocator_linux",
-      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_linux-0.2.5",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/geolocator_linux-0.2.4",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -561,15 +561,15 @@
     },
     {
       "name": "package_info_plus",
-      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus-10.1.0",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus-9.0.1",
       "packageUri": "lib/",
-      "languageVersion": "3.10"
+      "languageVersion": "3.3"
     },
     {
       "name": "package_info_plus_platform_interface",
-      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus_platform_interface-4.1.0",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/package_info_plus_platform_interface-3.2.1",
       "packageUri": "lib/",
-      "languageVersion": "3.10"
+      "languageVersion": "2.18"
     },
     {
       "name": "path",
@@ -654,6 +654,18 @@
       "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/record_use-0.6.0",
       "packageUri": "lib/",
       "languageVersion": "3.10"
+    },
+    {
+      "name": "share_plus",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/share_plus-10.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "share_plus_platform_interface",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/share_plus_platform_interface-5.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "2.18"
     },
     {
       "name": "simple_sparse_list",
@@ -795,9 +807,9 @@
     },
     {
       "name": "win32",
-      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/win32-6.3.0",
+      "rootUri": "file:///C:/Users/Lenovo/AppData/Local/Pub/Cache/hosted/pub.dev/win32-5.15.0",
       "packageUri": "lib/",
-      "languageVersion": "3.10"
+      "languageVersion": "3.8"
     },
     {
       "name": "wkt_parser",

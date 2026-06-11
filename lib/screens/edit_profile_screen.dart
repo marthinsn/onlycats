@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../data/profile_controller.dart';
 import '../services/auth_service.dart';
@@ -219,6 +220,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   'gender': selectedGender,
                   'profileImagePath': selectedImagePath,
                 });
+
+                // Update chat room username if it exists
+                await FirebaseFirestore.instance
+                    .collection('chat_rooms')
+                    .doc(user.uid)
+                    .update({
+                  'userName': usernameController.text.trim(),
+                }).catchError((_) {});
 
                 if (!context.mounted) return;
 

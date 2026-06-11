@@ -51,6 +51,15 @@ class RescueService {
       rescueReportId: doc.id,
     );
 
+    // NOTIF UNTUK ADMIN
+    await NotificationService().createNotification(
+      userId: 'admin',
+      title: 'Laporan Rescue Baru 🆘',
+      message: 'Ada laporan rescue baru di lokasi $location. Mohon segera ditinjau.',
+      type: 'rescue_submit_admin',
+      rescueReportId: doc.id,
+    );
+
     return doc.id;
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../theme/app_colors.dart';
+import '../../widgets/cat_loading.dart';
 
 class AdminChatDetailScreen extends StatefulWidget {
   final String userId;
@@ -79,9 +80,22 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF6F0), // Matching ChatAdminScreen bgColor
       appBar: AppBar(
-        title: Text(
-          widget.userName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(widget.userId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            String displayName = widget.userName;
+            if (snapshot.hasData && snapshot.data!.exists) {
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              displayName = userData['username'] ?? displayName;
+            }
+            return Text(
+              displayName,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            );
+          },
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primaryText,
@@ -99,7 +113,7 @@ class _AdminChatDetailScreenState extends State<AdminChatDetailScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CatLoading());
                 }
 
                 final docs = snapshot.data?.docs ?? [];

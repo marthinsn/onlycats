@@ -70,16 +70,37 @@ class _AdminAdoptionDetailScreenState extends State<AdminAdoptionDetailScreen> {
     });
 
     try {
-      await FirebaseFirestore.instance
+      final String catId = widget.adoptionData['catId']?.toString() ?? '';
+
+      // Create a batch to update both adoption and cat status
+      final batch = FirebaseFirestore.instance.batch();
+
+      // Update adoption status
+      final adoptionRef = FirebaseFirestore.instance
           .collection('adoptions')
-          .doc(widget.adoptionId)
-          .update({
-            'status': newStatus,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
+          .doc(widget.adoptionId);
+      batch.update(adoptionRef, {
+        'status': newStatus,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update cat status if needed
+      if (catId.isNotEmpty) {
+        final catRef =
+            FirebaseFirestore.instance.collection('cats').doc(catId);
+
+        if (newStatus == 'approved') {
+          // If approved, cat is no longer available
+          batch.update(catRef, {'status': 'diadopsi'});
+        } else if (status == 'approved' && newStatus != 'approved') {
+          // If was approved but now changed to something else, make it available again
+          batch.update(catRef, {'status': 'tersedia'});
+        }
+      }
+
+      await batch.commit();
 
       final userId = widget.adoptionData['userId']?.toString() ?? '';
-      final catId = widget.adoptionData['catId']?.toString() ?? '';
       final catName = widget.adoptionData['catName']?.toString() ?? 'kucing';
       final shelterName = widget.adoptionData['shelterName']?.toString() ?? '-';
 
@@ -213,15 +234,45 @@ class _AdminAdoptionDetailScreenState extends State<AdminAdoptionDetailScreen> {
                         children: [
                           _statusBadge(status),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(child: _statusButton('on hold')),
-                              const SizedBox(width: 10),
-                              Expanded(child: _statusButton('approved')),
-                              const SizedBox(width: 10),
-                              Expanded(child: _statusButton('rejected')),
-                            ],
-                          ),
+                          if (status == 'approved' || status == 'rejected')
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.lock_outline_rounded,
+                                    size: 20,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Status ini sudah final dan tidak dapat diubah lagi.',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Row(
+                              children: [
+                                Expanded(child: _statusButton('on hold')),
+                                const SizedBox(width: 10),
+                                Expanded(child: _statusButton('approved')),
+                                const SizedBox(width: 10),
+                                Expanded(child: _statusButton('rejected')),
+                              ],
+                            ),
                         ],
                       ),
                     ),

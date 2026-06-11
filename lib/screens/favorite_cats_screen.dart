@@ -23,6 +23,7 @@ class FavoriteCatsScreen extends StatelessWidget {
       vaccinated: data['vaccinated'] ?? false,
       sterilized: data['sterilized'] ?? false,
       available: data['available'] ?? true,
+      status: data['status'] ?? (data['available'] == false ? 'diadopsi' : 'tersedia'),
       favorite: true,
       color: data['color'] ?? '',
       weight: data['weight'] ?? '',
