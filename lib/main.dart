@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 
@@ -34,8 +35,8 @@ class OnlyCatsApp extends StatelessWidget {
       title: 'OnlyCats',
       theme: ThemeData(useMaterial3: true),
 
-      // route awal: masuk ke login dulu
-      home: const LoginScreen(),
+      // route awal: masuk ke splash screen dulu
+      home: const SplashScreen(),
 
       routes: {
         '/login': (_) => const LoginScreen(),

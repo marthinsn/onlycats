@@ -150,9 +150,11 @@ class AdminService {
         if (lastActive is Timestamp) {
           final lastActiveDate = lastActive.toDate();
           final diff = now.difference(lastActiveDate).abs();
-          
-          debugPrint('Checking admin ${doc.id}: Last active at $lastActiveDate, current time $now, diff: ${diff.inMinutes} mins');
-          
+
+          debugPrint(
+            'Checking admin ${doc.id}: Last active at $lastActiveDate, current time $now, diff: ${diff.inMinutes} mins',
+          );
+
           if (diff.inMinutes < 10) {
             anyAdminOnline = true;
           }

@@ -22,8 +22,8 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
   bool _isLoading = false;
   bool _isLiveChat = false;
 
-  final String _apiKey =
-      "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";
+  String get _apiKey =>
+      "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";
   final String? _userId = FirebaseAuth.instance.currentUser?.uid;
   String _actualUserName = "User";
 
@@ -103,12 +103,12 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               .collection('chat_rooms')
               .doc(_userId)
               .set({
-            'userId': _userId,
-            'userName': _actualUserName,
-            'lastMessage': '',
-            'timestamp': FieldValue.serverTimestamp(),
-            'unreadByAdmin': false,
-          });
+                'userId': _userId,
+                'userName': _actualUserName,
+                'lastMessage': '',
+                'timestamp': FieldValue.serverTimestamp(),
+                'unreadByAdmin': false,
+              });
         }
 
         if (mounted) {
@@ -122,9 +122,9 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal terhubung: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal terhubung: $e')));
       }
       setState(() {
         _isLiveChat = false;
@@ -144,22 +144,22 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
         .doc(_userId)
         .collection('messages')
         .add({
-      'senderId': _userId,
-      'text': text,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isUser': true,
-    });
+          'senderId': _userId,
+          'text': text,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isUser': true,
+        });
 
     await FirebaseFirestore.instance
         .collection('chat_rooms')
         .doc(_userId)
         .update({
-      'userId': _userId,
-      'userName': _actualUserName,
-      'lastMessage': text,
-      'timestamp': FieldValue.serverTimestamp(),
-      'unreadByAdmin': true,
-    });
+          'userId': _userId,
+          'userName': _actualUserName,
+          'lastMessage': text,
+          'timestamp': FieldValue.serverTimestamp(),
+          'unreadByAdmin': true,
+        });
 
     // NOTIF UNTUK ADMIN
     await NotificationService().createNotification(
@@ -189,7 +189,8 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
       List<Map<String, String>> messages = [
         {
           'role': 'system',
-          'content': 'Anda adalah asisten chatbot ahli kucing untuk aplikasi OnlyCats. '
+          'content':
+              'Anda adalah asisten chatbot ahli kucing untuk aplikasi OnlyCats. '
               'Ikuti aturan ini dalam menjawab: '
               '1. Hanya fokus pada topik kucing. '
               '2. Jika user bertanya mengenai cara melakukan penyelamatan (rescue) kucing melalui aplikasi, jelaskan tahapan berikut dengan bahasa yang sangat profesional: '
@@ -199,8 +200,8 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               '4. Jika user memberikan keluhan kesehatan/perawatan, lakukan verifikasi dengan menanyakan 1-3 pertanyaan detail yang relevan (seperti keparahan, gejala lain, atau riwayat kucing). '
               '5. JANGAN mengulang pertanyaan yang sudah dijawab oleh user. Perhatikan riwayat chat dengan saksama. '
               '6. Jika user sudah memberikan detail yang cukup atau menjawab pertanyaan verifikasi Anda, segera berikan kesimpulan, saran, atau solusi yang praktis. '
-              '7. Gunakan bahasa yang ramah, profesional, dan suportif.'
-        }
+              '7. Gunakan bahasa yang ramah, profesional, dan suportif.',
+        },
       ];
 
       for (var msg in _aiMessages.reversed.take(10).toList().reversed) {
@@ -210,30 +211,39 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
         });
       }
 
-      final response = await http.post(
-        Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $_apiKey',
-        },
-        body: jsonEncode({
-          'model': 'llama-3.3-70b-versatile',
-          'messages': messages,
-          'temperature': 0.7,
-        }),
-      );
+      final response = await http
+          .post(
+            Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $_apiKey',
+            },
+            body: jsonEncode({
+              'model': 'llama-3.3-70b-versatile',
+              'messages': messages,
+              'temperature': 0.7,
+            }),
+          )
+          .timeout(const Duration(seconds: 30));
+
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final botResponse = data['choices'][0]['message']['content'];
-        if (mounted) {
-          setState(() {
-            _aiMessages.add({
-              'text': botResponse ?? 'Maaf, saya sedang bingung.',
-              'isUser': false,
-            });
+        setState(() {
+          _aiMessages.add({
+            'text': botResponse ?? 'Maaf, saya sedang bingung.',
+            'isUser': false,
           });
-        }
+        });
+      } else {
+        setState(() {
+          _aiMessages.add({
+            'text': _buildAiErrorMessage(response),
+            'isUser': false,
+          });
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -244,6 +254,32 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
       _scrollToBottom();
+    }
+  }
+
+  String _buildAiErrorMessage(http.Response response) {
+    var detail = response.body;
+
+    try {
+      final decoded = jsonDecode(response.body);
+      final message = decoded['error']?['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        detail = message;
+      }
+    } catch (_) {
+      // Keep raw response body if Groq does not return JSON.
+    }
+
+    switch (response.statusCode) {
+      case 400:
+        return 'AI belum bisa merespon karena request tidak valid: $detail';
+      case 401:
+      case 403:
+        return 'AI belum bisa merespon. Status ${response.statusCode}: $detail';
+      case 429:
+        return 'AI sedang terkena batas pemakaian. Coba lagi beberapa saat lagi.';
+      default:
+        return 'AI belum bisa merespon. Server mengembalikan status ${response.statusCode}: $detail';
     }
   }
 
@@ -261,12 +297,18 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: _isLiveChat ? const Color(0xFF3D5A80).withOpacity(0.1) : const Color(0xFFFF9B71).withOpacity(0.1),
+                color: _isLiveChat
+                    ? const Color(0xFF3D5A80).withOpacity(0.1)
+                    : const Color(0xFFFF9B71).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _isLiveChat ? Icons.support_agent_rounded : Icons.smart_toy_rounded,
-                color: _isLiveChat ? const Color(0xFF3D5A80) : const Color(0xFFFF9B71),
+                _isLiveChat
+                    ? Icons.support_agent_rounded
+                    : Icons.smart_toy_rounded,
+                color: _isLiveChat
+                    ? const Color(0xFF3D5A80)
+                    : const Color(0xFFFF9B71),
                 size: 24,
               ),
             ),
@@ -276,7 +318,10 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               children: [
                 Text(
                   _isLiveChat ? 'Admin OnlyCats' : 'OnlyCats AI',
-                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
                 ),
                 if (_isLiveChat)
                   StreamBuilder<bool>(
@@ -313,7 +358,9 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
             padding: const EdgeInsets.only(right: 12),
             child: ActionChip(
               onPressed: _toggleLiveChat,
-              backgroundColor: _isLiveChat ? const Color(0xFFF3ECE8) : const Color(0xFF3D5A80),
+              backgroundColor: _isLiveChat
+                  ? const Color(0xFFF3ECE8)
+                  : const Color(0xFF3D5A80),
               label: Text(
                 _isLiveChat ? 'Pindah ke AI' : 'Live Chat',
                 style: TextStyle(
@@ -323,7 +370,9 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
                 ),
               ),
               avatar: Icon(
-                _isLiveChat ? Icons.psychology_rounded : Icons.headset_mic_rounded,
+                _isLiveChat
+                    ? Icons.psychology_rounded
+                    : Icons.headset_mic_rounded,
                 size: 16,
                 color: _isLiveChat ? AppColors.orange : Colors.white,
               ),
@@ -338,16 +387,20 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               decoration: BoxDecoration(
                 color: _bgColor,
                 image: DecorationImage(
-                  image: const NetworkImage('https://www.transparenttextures.com/patterns/cubes.png'),
+                  image: const NetworkImage(
+                    'https://www.transparenttextures.com/patterns/cubes.png',
+                  ),
                   opacity: 0.03,
-                  colorFilter: ColorFilter.mode(_textColor.withOpacity(0.1), BlendMode.srcIn),
+                  colorFilter: ColorFilter.mode(
+                    _textColor.withOpacity(0.1),
+                    BlendMode.srcIn,
+                  ),
                 ),
               ),
               child: _isLiveChat ? _buildLiveChatList() : _buildAiChatList(),
             ),
           ),
-          if (!_isLiveChat && _isLoading)
-            _buildTypingIndicator(),
+          if (!_isLiveChat && _isLoading) _buildTypingIndicator(),
           _buildInputArea(),
         ],
       ),
@@ -363,7 +416,10 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
           const SizedBox(
             width: 12,
             height: 12,
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.orange),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.orange,
+            ),
           ),
           const SizedBox(width: 8),
           Text(
@@ -420,19 +476,34 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20)],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 20,
+                      ),
+                    ],
                   ),
-                  child: const Icon(Icons.forum_outlined, size: 48, color: Color(0xFF3D5A80)),
+                  child: const Icon(
+                    Icons.forum_outlined,
+                    size: 48,
+                    color: Color(0xFF3D5A80),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 const Text(
                   'Halo! Ingin bertanya langsung ke admin?',
-                  style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.primaryText),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.primaryText,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 const Text(
                   'Ketik pesanmu di bawah ya.',
-                  style: TextStyle(color: AppColors.secondaryText, fontSize: 13),
+                  style: TextStyle(
+                    color: AppColors.secondaryText,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -463,7 +534,9 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isUser
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -472,8 +545,8 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               maxWidth: MediaQuery.of(context).size.width * 0.78,
             ),
             decoration: BoxDecoration(
-              color: isUser 
-                  ? _userBubbleColor 
+              color: isUser
+                  ? _userBubbleColor
                   : (isAdmin ? _adminBubbleColor : _botBubbleColor),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(24),
@@ -528,12 +601,18 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               ),
               child: TextField(
                 controller: _messageController,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'Tulis sesuatu...',
                   hintStyle: TextStyle(color: Color(0xFFADB3BC)),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
                 onSubmitted: (_) =>
                     _isLiveChat ? _sendLiveMessage() : _sendAiMessage(),
@@ -548,14 +627,16 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
               height: 52,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: _isLiveChat 
+                  colors: _isLiveChat
                       ? [const Color(0xFF3D5A80), const Color(0xFF203554)]
                       : [const Color(0xFFFF9B71), const Color(0xFFFF7A3D)],
                 ),
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: (_isLiveChat ? const Color(0xFF3D5A80) : _accentColor).withOpacity(0.3),
+                    color:
+                        (_isLiveChat ? const Color(0xFF3D5A80) : _accentColor)
+                            .withOpacity(0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
