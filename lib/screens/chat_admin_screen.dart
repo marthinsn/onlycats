@@ -167,6 +167,7 @@ class _ChatAdminScreenState extends State<ChatAdminScreen> {
       title: 'Pesan Baru dari $_actualUserName 💬',
       message: text,
       type: 'chat_receive_admin',
+      chatUserId: _userId,
     );
 
     _scrollToBottom();

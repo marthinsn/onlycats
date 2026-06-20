@@ -11,6 +11,7 @@ class NotificationService {
     String? rescueReportId,
     String? adoptionId,
     String? catId,
+    String? chatUserId,
   }) async {
     await _db.collection('notifications').add({
       'userId': userId,
@@ -20,6 +21,7 @@ class NotificationService {
       'rescueReportId': rescueReportId,
       'adoptionId': adoptionId,
       'catId': catId,
+      'chatUserId': chatUserId,
       'isRead': false,
       'createdAt': FieldValue.serverTimestamp(),
     });
