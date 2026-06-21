@@ -284,52 +284,57 @@ class _RescueScreenState extends State<RescueScreen> {
   }
 
   Widget _buildBottomNavigation(BuildContext context) {
-    return Container(
-      height: 84,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE9E4E1))),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentBottomNav,
-        onTap: (index) {
-          if (index == currentBottomNav) return;
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE9E4E1))),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentBottomNav,
+          onTap: (index) {
+            if (index == currentBottomNav) return;
 
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (index == 1) {
-            return;
-          } else if (index == 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
-          }
-        },
-        backgroundColor: Colors.white,
-        elevation: 0,
-        selectedItemColor: AppColors.orange,
-        unselectedItemColor: AppColors.iconGrey,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_filled),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.warning_amber_rounded),
-            label: 'Rescue',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+            if (index == 0) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            } else if (index == 1) {
+              return;
+            } else if (index == 2) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            }
+          },
+          backgroundColor: Colors.white,
+          elevation: 0,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          selectedItemColor: AppColors.orange,
+          unselectedItemColor: AppColors.iconGrey,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_filled),
+              label: 'Beranda',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.warning_amber_rounded),
+              label: 'Rescue',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              label: 'Profil',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -132,16 +132,12 @@ class _CatDetailScreenState extends State<CatDetailScreen>
                                 icon: Icons.arrow_back_ios_new_rounded,
                                 onTap: () => Navigator.pop(context),
                               ),
-                              _circleButton(
-                                icon: Icons.share_outlined,
-                                onTap: () {
-                                  Share.share(
-                                    'Ayo adopsi ${currentCat.name}! 🐱\n\n'
-                                    'Ras: ${currentCat.breed}\n'
-                                    'Usia: ${currentCat.age}\n'
-                                    'Lokasi: ${currentCat.location}\n\n'
-                                    'Lihat detailnya di aplikasi OnlyCats!',
-                                    subject: 'Adopsi ${currentCat.name} di OnlyCats',
+                              Builder(
+                                builder: (buttonContext) {
+                                  return _circleButton(
+                                    icon: Icons.share_outlined,
+                                    onTap: () =>
+                                        _shareCat(currentCat, buttonContext),
                                   );
                                 },
                               ),
@@ -306,9 +302,7 @@ class _CatDetailScreenState extends State<CatDetailScreen>
                             );
                           },
                           icon: Icon(
-                            isAdopted
-                                ? Icons.verified_rounded
-                                : Icons.favorite,
+                            isAdopted ? Icons.verified_rounded : Icons.favorite,
                             color: Colors.white,
                           ),
                           label: Text(
@@ -319,8 +313,9 @@ class _CatDetailScreenState extends State<CatDetailScreen>
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isAdopted ? Colors.grey[400] : AppColors.orange,
+                            backgroundColor: isAdopted
+                                ? Colors.grey[400]
+                                : AppColors.orange,
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
@@ -400,8 +395,9 @@ class _CatDetailScreenState extends State<CatDetailScreen>
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     elevation: 8,
-                                    shadowColor:
-                                        AppColors.orange.withOpacity(0.4),
+                                    shadowColor: AppColors.orange.withOpacity(
+                                      0.4,
+                                    ),
                                   ),
                                   child: const Text(
                                     'Cari Kucing Lainnya',
@@ -442,10 +438,7 @@ class _CatDetailScreenState extends State<CatDetailScreen>
                 color: Color(0xFFFFF0E8),
                 shape: BoxShape.circle,
               ),
-              child: const Text(
-                '🥳',
-                style: TextStyle(fontSize: 48),
-              ),
+              child: const Text('🥳', style: TextStyle(fontSize: 48)),
             ),
             const SizedBox(height: 24),
             Text(
@@ -915,18 +908,34 @@ class _CatDetailScreenState extends State<CatDetailScreen>
     );
   }
 
+  Future<void> _shareCat(CatModel cat, BuildContext buttonContext) async {
+    final box = buttonContext.findRenderObject() as RenderBox?;
+
+    await Share.share(
+      'Ayo adopsi ${cat.name}!\n\n'
+      'Ras: ${cat.breed}\n'
+      'Usia: ${cat.age}\n'
+      'Lokasi: ${cat.location}\n\n'
+      'Lihat detailnya di aplikasi OnlyCats!',
+      subject: 'Adopsi ${cat.name} di OnlyCats',
+      sharePositionOrigin: box == null
+          ? null
+          : box.localToGlobal(Offset.zero) & box.size,
+    );
+  }
+
   Widget _circleButton({required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(26),
-      onTap: onTap,
-      child: Container(
-        width: 52,
-        height: 52,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
+    return Material(
+      color: Colors.white,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 52,
+          height: 52,
+          child: Icon(icon, color: AppColors.primaryText, size: 24),
         ),
-        child: Icon(icon, color: AppColors.primaryText, size: 24),
       ),
     );
   }

@@ -57,22 +57,24 @@ class DefaultFirebaseOptions {
     projectId: 'onlycats-f8446',
     storageBucket: 'onlycats-f8446.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCM7v3qGe0tXUNegSaW-_ZaVL_Y6wqilLY',
-    appId: '1:729043734296:ios:e30c848943154b9a37186d',
+    appId: '1:729043734296:ios:5a29c65caee0488a37186d',
     messagingSenderId: '729043734296',
     projectId: 'onlycats-f8446',
     storageBucket: 'onlycats-f8446.firebasestorage.app',
-    iosBundleId: 'com.example.onlycats',
+    androidClientId: '729043734296-evui5tnqipqfd23bq01l4ca42dpbjmas.apps.googleusercontent.com',
+    iosClientId: '729043734296-v2lhvc0o3q2qmmaaikbpp35pmr8njbt6.apps.googleusercontent.com',
+    iosBundleId: 'com.marthinsn.onlycats',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCM7v3qGe0tXUNegSaW-_ZaVL_Y6wqilLY',
     appId: '1:729043734296:ios:e30c848943154b9a37186d',
     messagingSenderId: '729043734296',
     projectId: 'onlycats-f8446',
     storageBucket: 'onlycats-f8446.firebasestorage.app',
+    androidClientId: '729043734296-evui5tnqipqfd23bq01l4ca42dpbjmas.apps.googleusercontent.com',
+    iosClientId: '729043734296-gokapujvj5vd9repuk9hqh6cbeqngtkr.apps.googleusercontent.com',
     iosBundleId: 'com.example.onlycats',
   );
 

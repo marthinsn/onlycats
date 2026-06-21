@@ -6,20 +6,40 @@ class LocalNotificationService {
       FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
+    // Android settings
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
+    // iOS settings
+    const DarwinInitializationSettings iosSettings =
+        DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
+    // Gabungkan Android + iOS settings
     const InitializationSettings settings = InitializationSettings(
       android: androidSettings,
+      iOS: iosSettings,
     );
 
+    // Inisialisasi plugin
     await _notificationsPlugin.initialize(settings);
 
+    // Request permission Android 13+
     await _notificationsPlugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestNotificationsPermission();
+
+    // Request permission iOS
+    await _notificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   static Future<void> showNotification({
@@ -36,11 +56,15 @@ class LocalNotificationService {
           playSound: true,
         );
 
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
+      iOS: iosDetails,
     );
 
     debugPrint('LocalNotificationService: Showing notification - $title');
+
     await _notificationsPlugin.show(
       DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title,

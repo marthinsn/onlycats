@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
 
 class AdminBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -8,38 +7,43 @@ class AdminBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 84,
-      decoration: const BoxDecoration(
-        color: Color(0xFF203554),
-        border: Border(top: BorderSide(color: Color(0xFF2E4A72))),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        onTap: (index) => _onTap(context, index),
-        backgroundColor: const Color(0xFF203554),
-        elevation: 0,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white38,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            activeIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.sos_outlined),
-            activeIcon: Icon(Icons.sos_rounded),
-            label: 'Rescue',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.manage_accounts_outlined),
-            activeIcon: Icon(Icons.manage_accounts_rounded),
-            label: 'Akun',
-          ),
-        ],
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF203554),
+          border: Border(top: BorderSide(color: Color(0xFF2E4A72))),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: (index) => _onTap(context, index),
+          backgroundColor: const Color(0xFF203554),
+          elevation: 0,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          selectedItemColor: Colors.white,
+          unselectedItemColor: Colors.white38,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard_rounded),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.sos_outlined),
+              activeIcon: Icon(Icons.sos_rounded),
+              label: 'Rescue',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.manage_accounts_outlined),
+              activeIcon: Icon(Icons.manage_accounts_rounded),
+              label: 'Akun',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -116,8 +116,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Keluar Akun', style: TextStyle(fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Keluar Akun',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: const Text('Apakah kamu yakin ingin logout dari akun ini?'),
           actions: [
             TextButton(
@@ -128,7 +133,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.danger,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: () => Navigator.pop(context, true),
               child: const Text('Logout'),
@@ -224,9 +231,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onTap: () async {
             await Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const EditProfileScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const EditProfileScreen()),
             );
             await _loadUserFromFirestore();
           },
@@ -239,9 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (_) => const ChangePasswordScreen(),
-              ),
+              MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
             );
           },
         ),
@@ -476,11 +479,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final favoriteCount = favoriteSnapshot.data?.docs.length ?? 0;
 
         return StreamBuilder<QuerySnapshot>(
-          stream: user != null 
+          stream: user != null
               ? FirebaseFirestore.instance
-                  .collection('rescue_reports')
-                  .where('userId', isEqualTo: user.uid)
-                  .snapshots()
+                    .collection('rescue_reports')
+                    .where('userId', isEqualTo: user.uid)
+                    .snapshots()
               : const Stream.empty(),
           builder: (context, reportSnapshot) {
             final reportCount = reportSnapshot.data?.docs.length ?? 0;
@@ -500,9 +503,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: Row(
                 children: [
-                  _buildStatItem('$favoriteCount', 'Favorit', Icons.favorite_rounded, Colors.pinkAccent),
-                  Container(width: 1, height: 40, color: const Color(0xFFF0EBE8)),
-                  _buildStatItem('$reportCount', 'Laporan', Icons.assignment_rounded, AppColors.orange),
+                  _buildStatItem(
+                    '$favoriteCount',
+                    'Favorit',
+                    Icons.favorite_rounded,
+                    Colors.pinkAccent,
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40,
+                    color: const Color(0xFFF0EBE8),
+                  ),
+                  _buildStatItem(
+                    '$reportCount',
+                    'Laporan',
+                    Icons.assignment_rounded,
+                    AppColors.orange,
+                  ),
                 ],
               ),
             );
@@ -512,7 +529,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatItem(String value, String label, IconData icon, Color color) {
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -631,73 +653,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildBottomNavigation(BuildContext context) {
-    return Container(
-      height: 84,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentBottomNav,
-        onTap: (index) {
-          if (index == currentBottomNav) return;
+    return SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentBottomNav,
+          onTap: (index) {
+            if (index == currentBottomNav) return;
 
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          } else if (index == 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const RescueScreen()),
-            );
-          }
-        },
-        backgroundColor: Colors.white,
-        elevation: 0,
-        selectedItemColor: AppColors.orange,
-        unselectedItemColor: AppColors.iconGrey,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.home_outlined, size: 26),
+            if (index == 0) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+              );
+            } else if (index == 1) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RescueScreen()),
+              );
+            }
+          },
+          backgroundColor: Colors.white,
+          elevation: 0,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          selectedItemColor: AppColors.orange,
+          unselectedItemColor: AppColors.iconGrey,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined, size: 24),
+              activeIcon: Icon(Icons.home_filled, size: 24),
+              label: 'Beranda',
             ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.home_filled, size: 26),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.warning_amber_rounded, size: 24),
+              label: 'Rescue',
             ),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.warning_amber_rounded, size: 26),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline, size: 24),
+              activeIcon: Icon(Icons.person, size: 24),
+              label: 'Profil',
             ),
-            label: 'Rescue',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.person_outline, size: 26),
-            ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.person, size: 26),
-            ),
-            label: 'Profil',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -731,9 +742,9 @@ class ProfileMenuTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: isLast 
-          ? const BorderRadius.vertical(bottom: Radius.circular(28))
-          : title == 'Edit Profil' 
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(28))
+            : title == 'Edit Profil'
             ? const BorderRadius.vertical(top: Radius.circular(28))
             : null,
         child: Container(
@@ -751,15 +762,15 @@ class ProfileMenuTile extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: isLogout 
-                      ? const Color(0xFFFFE5E0) 
+                  color: isLogout
+                      ? const Color(0xFFFFE5E0)
                       : (iconBg ?? const Color(0xFFFDF6F0)),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   icon,
-                  color: isLogout 
-                      ? Colors.redAccent 
+                  color: isLogout
+                      ? Colors.redAccent
                       : (iconColor ?? AppColors.orange),
                   size: 24,
                 ),
@@ -774,7 +785,9 @@ class ProfileMenuTile extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isLogout ? Colors.redAccent : AppColors.primaryText,
+                        color: isLogout
+                            ? Colors.redAccent
+                            : AppColors.primaryText,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -803,4 +816,3 @@ class ProfileMenuTile extends StatelessWidget {
     );
   }
 }
-

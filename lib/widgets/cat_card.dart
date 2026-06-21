@@ -94,6 +94,8 @@ class CatCard extends StatelessWidget {
                           try {
                             await FavoriteService().toggleFavorite(cat, isFav);
 
+                            if (!context.mounted) return;
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
@@ -105,6 +107,8 @@ class CatCard extends StatelessWidget {
                               ),
                             );
                           } catch (e) {
+                            if (!context.mounted) return;
+
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Gagal favorit: $e')),
                             );

@@ -51,27 +51,19 @@ class _HomeScreenState extends State<HomeScreen> {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
-              sliver: SliverToBoxAdapter(
-                child: _buildTopSection(),
-              ),
+              sliver: SliverToBoxAdapter(child: _buildTopSection()),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-              sliver: SliverToBoxAdapter(
-                child: _buildSearchBar(),
-              ),
+              sliver: SliverToBoxAdapter(child: _buildSearchBar()),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-              sliver: SliverToBoxAdapter(
-                child: _buildMenuCards(),
-              ),
+              sliver: SliverToBoxAdapter(child: _buildMenuCards()),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
-              sliver: SliverToBoxAdapter(
-                child: _buildCatListFromFirestore(),
-              ),
+              sliver: SliverToBoxAdapter(child: _buildCatListFromFirestore()),
             ),
           ],
         ),
@@ -80,75 +72,55 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBottomNavigation(BuildContext context) {
-    return Container(
-      height: 84,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentBottomNav,
-        onTap: (index) {
-          if (index == currentBottomNav) return;
+    return SafeArea(
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(top: BorderSide(color: Color(0xFFE9E4E1))),
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentBottomNav,
+          onTap: (index) {
+            if (index == currentBottomNav) return;
 
-          if (index == 0) {
-            return;
-          } else if (index == 1) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const RescueScreen()),
-            );
-          } else if (index == 2) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const ProfileScreen()),
-            );
-          }
-        },
-        backgroundColor: Colors.white,
-        elevation: 0,
-        selectedItemColor: AppColors.orange,
-        unselectedItemColor: AppColors.iconGrey,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.home_outlined, size: 26),
+            if (index == 1) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const RescueScreen()),
+              );
+            } else if (index == 2) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            }
+          },
+          backgroundColor: Colors.white,
+          elevation: 0,
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          selectedItemColor: AppColors.orange,
+          unselectedItemColor: AppColors.iconGrey,
+          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_filled),
+              label: 'Beranda',
             ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.home_filled, size: 26),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.warning_amber_rounded),
+              label: 'Rescue',
             ),
-            label: 'Beranda',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.warning_amber_rounded, size: 26),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profil',
             ),
-            label: 'Rescue',
-          ),
-          BottomNavigationBarItem(
-            icon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.person_outline, size: 26),
-            ),
-            activeIcon: Padding(
-              padding: EdgeInsets.only(bottom: 4),
-              child: Icon(Icons.person, size: 26),
-            ),
-            label: 'Profil',
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
